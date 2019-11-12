@@ -12,10 +12,16 @@ public class UIController : MonoBehaviour
     public GameObject doneButton;
     private bool debugMode = false;
     public Text fps;
+
+    private Vector3 originalEulers;
+    private Vector3 transformEulers;
+    public int timeInFrames = 100;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        originalEulers = voxelModel.transform.eulerAngles;
+        transformEulers = -1 * originalEulers / timeInFrames;
     }
 
     // Update is called once per frame
@@ -25,7 +31,7 @@ public class UIController : MonoBehaviour
         {
             if(fps.enabled)
             {
-                fps.text = (int)(1.0 / Time.deltaTime) + " FPS / " + Time.deltaTime + " Sec";
+                fps.text = (int)(1.0 / Time.deltaTime) + " FPS";
             }
             else
             {
@@ -121,6 +127,15 @@ public class UIController : MonoBehaviour
                 ((GameObject)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][1]).SetActive(false);
             }
             SceneController.m_lastUndos.RemoveAt(SceneController.m_lastUndos.Count - 1);
+        }
+    }
+
+    public void ResetRotation()
+    {
+        if (timeInFrames > 0)
+        {
+            voxelModel.transform.eulerAngles += transformEulers;
+            timeInFrames--;
         }
     }
 }

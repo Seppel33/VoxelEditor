@@ -8,15 +8,16 @@ public class CameraController : MonoBehaviour
 
     public float cameraSensitivity = 40f;
     public Camera Camera;
-    public Light directionalLight;
+    public GameObject voxelObject;
 
     public float moveSpeed;
     public float mouseSensitivity;
     public bool invertMouse;
     public bool autoLockCursor = false;
+    public float touchSenitivity;
 
-    private float mouseY;
-    private float mouseX;
+    private float pitch;
+    private float yaw;
 
     // Update is called once per frame
     private void Start()
@@ -50,11 +51,11 @@ public class CameraController : MonoBehaviour
             transform.Translate(Vector3.up * speed * Input.GetAxis("Jump"), Space.World);
             transform.Translate(Vector3.up * speed * Input.GetAxis("Crouch") * -1, Space.World);
 
-            mouseY += Input.GetAxis("Mouse Y") * mouseSensitivity * ((invertMouse) ? 1 : -1);
-            mouseX += Input.GetAxis("Mouse X") * mouseSensitivity * ((invertMouse) ? -1 : 1);
-            mouseY = Mathf.Clamp(mouseY, -89, 89);
+            pitch += Input.GetAxis("Mouse Y") * mouseSensitivity * ((invertMouse) ? 1 : -1);
+            yaw += Input.GetAxis("Mouse X") * mouseSensitivity * ((invertMouse) ? -1 : 1);
+            pitch = Mathf.Clamp(pitch, -89, 89);
 
-            transform.eulerAngles = new Vector3(mouseY, mouseX, 0f);
+            transform.eulerAngles = new Vector3(pitch, yaw, 0f);
 
         }
 
@@ -80,16 +81,17 @@ public class CameraController : MonoBehaviour
             if(Input.touchCount > 0)
             {
                 Debug.Log(Input.GetTouch(0).tapCount);
-                if (Input.touchCount == 1)
+                if(Input.touchCount == 2)
                 {
-
-                }
-                else if(Input.touchCount == 2)
-                {
-
+                    Touch touch1 = Input.GetTouch(0);
+                    Touch touch2 = Input.GetTouch(1);
+                    Vector2 deltaPos = (touch1.deltaPosition + touch2.deltaPosition) / 2;
+                    pitch = deltaPos.y * touchSenitivity;
+                    yaw = deltaPos.x * touchSenitivity;
+                    voxelObject.transform.eulerAngles = new Vector3(pitch, yaw, 0f);
                 }
             }
-            
+
 
             /*
              * 1.
@@ -102,6 +104,9 @@ public class CameraController : MonoBehaviour
              * zoom,move closer/away  |pinch gesture
              * 3.
              * rotate x- and y-Axis |Joystick
+             * zoom,move closer/away  |pinch gesture
+             * 4.
+             * rotate x- and y-Axis |two finger swipe
              * zoom,move closer/away  |pinch gesture
             */
         }

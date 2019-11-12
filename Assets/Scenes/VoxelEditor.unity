@@ -416,11 +416,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cameraSensitivity: 40
   Camera: {fileID: 366427761}
-  directionalLight: {fileID: 32579401}
+  voxelObject: {fileID: 0}
   moveSpeed: 0.2
   mouseSensitivity: 1.2
   invertMouse: 0
   autoLockCursor: 0
+  touchSenitivity: 0
 --- !u!1 &418993852
 GameObject:
   m_ObjectHideFlags: 0
