@@ -20,7 +20,7 @@ public class UndoRedo : MonoBehaviour
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][1])[i];
                     cube.SetActive(false);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
                 }
             }
             else if ((int)m_lastActions[undoPosition][0] == 1)
@@ -29,7 +29,7 @@ public class UndoRedo : MonoBehaviour
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][1])[i];
                     cube.SetActive(true);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
                 }
             }
             else if ((int)m_lastActions[undoPosition][0] == 2)
@@ -38,13 +38,13 @@ public class UndoRedo : MonoBehaviour
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][1])[i];
                     cube.SetActive(false);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
                 }
                 for (int i = 0; i < ((ArrayList)m_lastActions[undoPosition][2]).Count; i++)
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][2])[i];
                     cube.SetActive(true);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
                 }
             }
         }
@@ -62,7 +62,7 @@ public class UndoRedo : MonoBehaviour
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][1])[i];
                     cube.SetActive(true);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
                 }
             }
             else if ((int)m_lastActions[undoPosition][0] == 1)
@@ -71,7 +71,7 @@ public class UndoRedo : MonoBehaviour
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][1])[i];
                     cube.SetActive(false);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
                 }
             }
             else if ((int)m_lastActions[undoPosition][0] == 2)
@@ -80,13 +80,13 @@ public class UndoRedo : MonoBehaviour
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][2])[i];
                     cube.SetActive(false);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = null;
                 }
                 for (int i = 0; i < ((ArrayList)m_lastActions[undoPosition][1]).Count; i++)
                 {
                     GameObject cube = (GameObject)((ArrayList)m_lastActions[undoPosition][1])[i];
                     cube.SetActive(true);
-                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y + (int)(SceneController.dimensions.y / 2), (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
+                    SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
                 }
             }
             increaseUndoPosition();
