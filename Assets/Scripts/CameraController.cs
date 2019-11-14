@@ -7,7 +7,6 @@ public class CameraController : MonoBehaviour
 {
 
     public float cameraSensitivity = 40f;
-    public Camera Camera;
     public GameObject voxelObject;
     public Light directionalLight;
 
@@ -26,7 +25,7 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     private void Start()
     {
-        Camera.transform.LookAt(transform.position);
+        //transform.LookAt(transform.position);
     }
     void LateUpdate()
     {
@@ -36,6 +35,7 @@ public class CameraController : MonoBehaviour
         }
         else
         {
+
             MobileControls(true);
             //WindowsControls();
             
@@ -78,41 +78,12 @@ public class CameraController : MonoBehaviour
     {
         if (windows)
         {
-
-        }
-        if (SceneController.getArMode())
-        {
-            //rotate object y-Axis |rotate gesture
-            //rotate object x-Axis |swipe up/down
-        }
-        else
-        {
-
-            /*
-            if(Input.touchCount > 0)
-            {
-                Debug.Log(Input.GetTouch(0).tapCount);
-                if(Input.touchCount == 2)
-                {
-                    Touch touch1 = Input.GetTouch(0);
-                    Touch touch2 = Input.GetTouch(1);
-                    Vector2 deltaPos = (touch1.deltaPosition + touch2.deltaPosition) / 2;
-                    pitch = deltaPos.y * touchSenitivity;
-                    yaw = deltaPos.x * touchSenitivity;
-                    voxelObject.transform.eulerAngles = new Vector3(pitch, yaw, 0f);
-                }
-                else
-                {
-
-                }
-            }*/
-
             if (Input.GetMouseButton(1))
             {
                 Vector3 deltaPos = Input.mousePosition - oldMousePos;
-                if(Mathf.Abs(deltaPos.y) > Mathf.Abs(deltaPos.x))
+                if (Mathf.Abs(deltaPos.y) > Mathf.Abs(deltaPos.x))
                 {
-                    if(Mathf.Abs(deltaPos.x) <= 2 && Mathf.Abs(deltaPos.y) >2)
+                    if (Mathf.Abs(deltaPos.x) <= 2 && Mathf.Abs(deltaPos.y) > 2)
                     {
                         deltaPos.x = 0;
                     }
@@ -138,9 +109,36 @@ public class CameraController : MonoBehaviour
             {
                 oldMousePos = Input.mousePosition;
             }
+        }
+        else
+        {
+            if (SceneController.getArMode())
+            {
+                //rotate object y-Axis |rotate gesture
+                //rotate object x-Axis |swipe up/down
+            }
+            else
+            {
+                if(Input.touchCount > 0)
+                {
+                    Debug.Log(Input.GetTouch(0).tapCount);
+                    if(Input.touchCount == 2)
+                    {
+                        Touch touch1 = Input.GetTouch(0);
+                        Touch touch2 = Input.GetTouch(1);
+                        Vector2 deltaPos = (touch1.deltaPosition + touch2.deltaPosition) / 2;
+                        pitch = deltaPos.y * touchSenitivity;
+                        yaw = deltaPos.x * touchSenitivity;
+                        voxelObject.transform.eulerAngles = new Vector3(pitch, yaw, 0f);
+                    }
+                    else
+                    {
 
+                    }
+                }
+            }
 
-            /*
+            /* Options
              * 1.
              * rotate y-Axis |rotate gesture
              * rotate x-Axis |two finger swipe up/down

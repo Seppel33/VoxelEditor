@@ -11,11 +11,12 @@ public class SceneController : MonoBehaviour
     public GameObject tileSelector;
     public GameObject voxelModel;
     public GameObject voxel;
-    
+
     public bool debugMode = false;
     public UIController UIController;
 
     private static bool arMode = false;
+    private static bool vrMode = false;
     private static bool onMobile = false;
 
     private Vector3 originPointerPosition;
@@ -50,192 +51,48 @@ public class SceneController : MonoBehaviour
             onMobile = true;
             Application.targetFrameRate = 30;
         }
-        else if(operatingSystem[0] == 'W')
+        else if (operatingSystem[0] == 'W')
         {
             Application.targetFrameRate = 60;
         }
         Debug.Log(operatingSystem);
         UIController.SetDebugMode(debugMode);
         dimensions = dimension;
-        gridOfObjects = new GameObject[dimensions.x,dimensions.y,dimensions.z];
+        gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
     }
 
     // Update is called once per frame
     void Update()
     {
-        
-
         if (!EventSystem.current.IsPointerOverGameObject())
         {
-            mouseManager();
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out hit, 100.0f))
+            if (vrMode)
             {
 
-                Vector3 endPosition = hit.point + hit.normal / 2;
-
-                endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
-                endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
-                endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
-
-                if (!m_holdRelease)
-                {
-                    tileSelector.transform.position = endPosition;
-                }
-
-                tileSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
-                tileSelector.SetActive(true);
-
-                if (m_clickBegin && m_firstClickFrame)
-                {
-                    m_firstClickFrame = false;
-                    originPointerPosition = endPosition;
-                }
-                if (endPosition != originPointerPosition && m_clickBegin)
-                {
-                    m_mouseHold = true;
-                }
-
-                if (m_clicked)
-                {
-                    if(((int)endPosition.x + (int)(dimensions.x / 2) >= 0 && (int)endPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)endPosition.y >= 0 && (int)endPosition.y < dimensions.y) 
-                        && ((int)endPosition.z + (int)(dimensions.z / 2) >= 0 && (int)endPosition.z + (int)(dimensions.z / 2) < dimensions.z))
-                    {
-                        GameObject cube = Instantiate(voxel, endPosition, voxelModel.transform.rotation);
-                        cube.transform.parent = voxelModel.transform;
-                        ArrayList cubes = new ArrayList();
-                        cubes.Add(cube);
-
-                        ArrayList action = new ArrayList();
-                        action.Add(0); //0 -> placed object
-                        action.Add(cubes); //v -> arraylist of gameobject
-
-                        gridOfObjects[(int)endPosition.x + (int)(dimensions.x / 2), (int)endPosition.y, (int)endPosition.z + (int)(dimensions.z / 2)] = cube;
-
-                        undoRedoScript.addAction(action);
-                    }
-                    
-                }
-                else if (m_mouseHold)
-                {
-                    Vector3 difference = endPosition - originPointerPosition;
-                    tileSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
-                    tileSelector.transform.position = originPointerPosition + difference / 2;
-
-                    int children = tileSelector.transform.GetChild(0).transform.childCount;
-                    for (int i = 0; i < children; ++i)
-                    {
-                        rend = tileSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
-                        rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
-                        rend.material.SetFloat("Vector1_D6E874BF", (tileSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
-                    }
-
-                }
-                else if (m_holdRelease)
-                {
-                    if (((int)endPosition.x + (int)(dimensions.x / 2) >= 0 && (int)endPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)endPosition.y >= 0 && (int)endPosition.y < dimensions.y)
-                        && ((int)endPosition.z + (int)(dimensions.z / 2) >= 0 && (int)endPosition.z + (int)(dimensions.z / 2) < dimensions.z) && ((int)originPointerPosition.x + (int)(dimensions.x / 2) >= 0 && (int)originPointerPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)originPointerPosition.y >= 0 && (int)originPointerPosition.y < dimensions.y)
-                        && ((int)originPointerPosition.z + (int)(dimensions.z / 2) >= 0 && (int)originPointerPosition.z + (int)(dimensions.z / 2) < dimensions.z))
-                    {
-                        //start- & end-position of selection
-                        Vector2[] bounds = new Vector2[3];
-                        if (endPosition.x < originPointerPosition.x)
-                        {
-                            bounds[0] = new Vector2(endPosition.x, originPointerPosition.x);
-                        }
-                        else
-                        {
-                            bounds[0] = new Vector2(originPointerPosition.x, endPosition.x);
-                        }
-
-                        if (endPosition.y < originPointerPosition.y)
-                        {
-                            bounds[1] = new Vector2(endPosition.y, originPointerPosition.y);
-                        }
-                        else
-                        {
-                            bounds[1] = new Vector2(originPointerPosition.y, endPosition.y);
-                        }
-
-                        if (endPosition.z < originPointerPosition.z)
-                        {
-                            bounds[2] = new Vector2(endPosition.z, originPointerPosition.z);
-                        }
-                        else
-                        {
-                            bounds[2] = new Vector2(originPointerPosition.z, endPosition.z);
-                        }
-
-                        ArrayList replacedCubes = new ArrayList();
-                        ArrayList placedCubes = new ArrayList();
-
-                        for (int i = (int)bounds[0].x; i <= bounds[0].y; i++)
-                        {
-                            for (int w = (int)bounds[1].x; w <= bounds[1].y; w++)
-                            {
-                                for (int t = (int)bounds[2].x; t <= bounds[2].y; t++)
-                                {
-                                    GameObject cube = Instantiate(voxel, new Vector3(i, w, t), voxelModel.transform.rotation);
-                                    cube.transform.parent = voxelModel.transform;
-
-                                    if(gridOfObjects[i+ (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] != null)
-                                    {
-                                        replacedCubes.Add(gridOfObjects[i + (int)(dimensions.x / 2), w + (int)(dimensions.y / 2), t + (int)(dimensions.z / 2)]);
-                                        gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)].gameObject.SetActive(false);
-                                    }
-                                    gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] = cube;
-                                    placedCubes.Add(cube);
-
-                                }
-                            }
-                        }
-                        ArrayList action = new ArrayList();
-                        if (replacedCubes.Count == 0)
-                        {
-                            action.Add(0); //0 -> placed object
-                            action.Add(placedCubes); //group -> group of gameobjects
-                        }
-                        else
-                        {
-                            action.Add(2); //2 -> replaced object
-                            action.Add(placedCubes); //placedCubes -> group of placed gameobjects
-                            action.Add(replacedCubes); //replacedCubes -> group of replaced gameobjects
-                        }
-
-                        undoRedoScript.addAction(action);
-
-                    }
-                    tileSelector.transform.localScale = new Vector3(1, 1, 1);
-                    tileSelector.transform.position = endPosition;
-                    int children = tileSelector.transform.GetChild(0).transform.childCount;
-                    for (int i = 0; i < children; ++i)
-                    {
-                        rend = tileSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
-                        rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
-                        rend.material.SetFloat("Vector1_D6E874BF", 0.8f);
-                    }
-                }
-                else if (m_rClicked)
-                {
-                    if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
-                    {
-                        Vector3Int v = new Vector3Int((int)(endPosition.x-hit.normal.x), (int)(endPosition.y - hit.normal.y), (int)(endPosition.z - hit.normal.z));
-                        DeleteObj(hit.transform.gameObject, v);
-                    }
-                }
+            }
+            else if (arMode)
+            {
 
             }
             else
             {
-                tileSelector.SetActive(false);
+                switch (UIController.selectedState)
+                {
+                    case 0:
+                        standardBuildControl();
+                        break;
+                    case 1:
+                        standardDeleteControl();
+                        break;
+                }
+                
             }
         }
         else
         {
             tileSelector.SetActive(false);
         }
-        
+
 
 
     }
@@ -345,4 +202,181 @@ public class SceneController : MonoBehaviour
         undoRedoScript.addAction(action);
     }
 
+    public void standardBuildControl()
+    {
+        mouseManager();
+        RaycastHit hit;
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out hit, 100.0f))
+        {
+
+            Vector3 endPosition = hit.point + hit.normal / 2;
+
+            endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
+            endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
+            endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
+
+            if (!m_holdRelease)
+            {
+                tileSelector.transform.position = endPosition;
+            }
+
+            tileSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
+            tileSelector.SetActive(true);
+
+            if (m_clickBegin && m_firstClickFrame)
+            {
+                m_firstClickFrame = false;
+                originPointerPosition = endPosition;
+            }
+            if (endPosition != originPointerPosition && m_clickBegin)
+            {
+                m_mouseHold = true;
+            }
+
+            if (m_clicked)
+            {
+                if (((int)endPosition.x + (int)(dimensions.x / 2) >= 0 && (int)endPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)endPosition.y >= 0 && (int)endPosition.y < dimensions.y)
+                    && ((int)endPosition.z + (int)(dimensions.z / 2) >= 0 && (int)endPosition.z + (int)(dimensions.z / 2) < dimensions.z))
+                {
+                    GameObject cube = Instantiate(voxel, endPosition, voxelModel.transform.rotation);
+                    cube.transform.parent = voxelModel.transform;
+                    ArrayList cubes = new ArrayList();
+                    cubes.Add(cube);
+
+                    ArrayList action = new ArrayList();
+                    action.Add(0); //0 -> placed object
+                    action.Add(cubes); //v -> arraylist of gameobject
+
+                    gridOfObjects[(int)endPosition.x + (int)(dimensions.x / 2), (int)endPosition.y, (int)endPosition.z + (int)(dimensions.z / 2)] = cube;
+
+                    undoRedoScript.addAction(action);
+                }
+
+            }
+            else if (m_mouseHold)
+            {
+                Vector3 difference = endPosition - originPointerPosition;
+                tileSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
+                tileSelector.transform.position = originPointerPosition + difference / 2;
+
+                int children = tileSelector.transform.GetChild(0).transform.childCount;
+                for (int i = 0; i < children; ++i)
+                {
+                    rend = tileSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
+                    rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
+                    rend.material.SetFloat("Vector1_D6E874BF", (tileSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
+                }
+
+            }
+            else if (m_holdRelease)
+            {
+                if (((int)endPosition.x + (int)(dimensions.x / 2) >= 0 && (int)endPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)endPosition.y >= 0 && (int)endPosition.y < dimensions.y)
+                    && ((int)endPosition.z + (int)(dimensions.z / 2) >= 0 && (int)endPosition.z + (int)(dimensions.z / 2) < dimensions.z) && ((int)originPointerPosition.x + (int)(dimensions.x / 2) >= 0 && (int)originPointerPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)originPointerPosition.y >= 0 && (int)originPointerPosition.y < dimensions.y)
+                    && ((int)originPointerPosition.z + (int)(dimensions.z / 2) >= 0 && (int)endPosition.z + (int)(dimensions.z / 2) < dimensions.z))
+                {
+                    //start- & end-position of selection
+                    Vector2[] bounds = new Vector2[3];
+                    if (endPosition.x < originPointerPosition.x)
+                    {
+                        bounds[0] = new Vector2(endPosition.x, originPointerPosition.x);
+                    }
+                    else
+                    {
+                        bounds[0] = new Vector2(originPointerPosition.x, endPosition.x);
+                    }
+
+                    if (endPosition.y < originPointerPosition.y)
+                    {
+                        bounds[1] = new Vector2(endPosition.y, originPointerPosition.y);
+                    }
+                    else
+                    {
+                        bounds[1] = new Vector2(originPointerPosition.y, endPosition.y);
+                    }
+
+                    if (endPosition.z < originPointerPosition.z)
+                    {
+                        bounds[2] = new Vector2(endPosition.z, originPointerPosition.z);
+                    }
+                    else
+                    {
+                        bounds[2] = new Vector2(originPointerPosition.z, endPosition.z);
+                    }
+
+                    ArrayList replacedCubes = new ArrayList();
+                    ArrayList placedCubes = new ArrayList();
+
+                    for (int i = (int)bounds[0].x; i <= bounds[0].y; i++)
+                    {
+                        for (int w = (int)bounds[1].x; w <= bounds[1].y; w++)
+                        {
+                            for (int t = (int)bounds[2].x; t <= bounds[2].y; t++)
+                            {
+                                GameObject cube = Instantiate(voxel, new Vector3(i, w, t), voxelModel.transform.rotation);
+                                cube.transform.parent = voxelModel.transform;
+
+                                if (gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] != null)
+                                {
+                                    replacedCubes.Add(gridOfObjects[i + (int)(dimensions.x / 2), w + (int)(dimensions.y / 2), t + (int)(dimensions.z / 2)]);
+                                    gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)].gameObject.SetActive(false);
+                                }
+                                gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] = cube;
+                                placedCubes.Add(cube);
+
+                            }
+                        }
+                    }
+                    ArrayList action = new ArrayList();
+                    if (replacedCubes.Count == 0)
+                    {
+                        action.Add(0); //0 -> placed object
+                        action.Add(placedCubes); //group -> group of gameobjects
+                    }
+                    else
+                    {
+                        action.Add(2); //2 -> replaced object
+                        action.Add(placedCubes); //placedCubes -> group of placed gameobjects
+                        action.Add(replacedCubes); //replacedCubes -> group of replaced gameobjects
+                    }
+
+                    undoRedoScript.addAction(action);
+
+                }
+                tileSelector.transform.localScale = new Vector3(1, 1, 1);
+                tileSelector.transform.position = endPosition;
+                int children = tileSelector.transform.GetChild(0).transform.childCount;
+                for (int i = 0; i < children; ++i)
+                {
+                    rend = tileSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
+                    rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
+                    rend.material.SetFloat("Vector1_D6E874BF", 0.8f);
+                }
+            }
+            else if (m_rClicked)
+            {
+                if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
+                {
+                    Vector3Int v = new Vector3Int((int)(endPosition.x - hit.normal.x), (int)(endPosition.y - hit.normal.y), (int)(endPosition.z - hit.normal.z));
+                    DeleteObj(hit.transform.gameObject, v);
+                }
+            }
+
+        }
+        else
+        {
+            tileSelector.SetActive(false);
+        }
+    }
+    public void standardDeleteControl()
+    {
+
+    }
+    //standardPaintControl
+    //arBuildControl
+    //arDeleteControl
+    //arPaintControl
+    //vrBuildControl
+    //vrDeleteControl
+    //vrPaintControl
 }

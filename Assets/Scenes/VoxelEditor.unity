@@ -292,7 +292,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 125580908}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1086357654}
+        m_MethodName: setSelectedState
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 3
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &125580908
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -688,7 +699,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cameraSensitivity: 40
-  Camera: {fileID: 366427761}
   voxelObject: {fileID: 306670566}
   directionalLight: {fileID: 32579401}
   moveSpeed: 0.2
@@ -946,7 +956,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 540420153}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.5, z: 0}
+  m_LocalPosition: {x: 0, y: -0.501, z: 0}
   m_LocalScale: {x: 1.1, y: 1, z: 1.1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -1033,7 +1043,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 570675125}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1086357654}
+        m_MethodName: setSelectedState
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 1
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &570675125
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2062,6 +2083,7 @@ MonoBehaviour:
   operatingSystem: {fileID: 1819246161}
   timeInFrames: 100
   debugInfos: {fileID: 1493201194}
+  selectedState: 0
 --- !u!1 &1106255471
 GameObject:
   m_ObjectHideFlags: 0
@@ -2741,7 +2763,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1483620484}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1086357654}
+        m_MethodName: setSelectedState
+        m_Mode: 3
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1483620484
 MonoBehaviour:
   m_ObjectHideFlags: 0

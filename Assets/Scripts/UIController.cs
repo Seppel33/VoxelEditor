@@ -21,6 +21,8 @@ public class UIController : MonoBehaviour
     public GameObject debugInfos;
     private bool refocusAnimation = false;
 
+    public int selectedState = 0;
+
 
     // Start is called before the first frame update
     void Start()
@@ -103,6 +105,11 @@ public class UIController : MonoBehaviour
             refocusAnimation = true;
         }
         
+    }
+
+    public void setSelectedState(int state)
+    {
+        selectedState = state;
     }
 
 }
