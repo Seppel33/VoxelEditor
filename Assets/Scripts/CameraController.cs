@@ -9,15 +9,19 @@ public class CameraController : MonoBehaviour
     public float cameraSensitivity = 40f;
     public Camera Camera;
     public GameObject voxelObject;
+    public Light directionalLight;
 
     public float moveSpeed;
     public float mouseSensitivity;
     public bool invertMouse;
     public bool autoLockCursor = false;
-    public float touchSenitivity;
+    public float touchSenitivity = 10;
 
     private float pitch;
     private float yaw;
+    private bool inSwipeAnimation = false;
+
+    private Vector3 oldMousePos;
 
     // Update is called once per frame
     private void Start()
@@ -26,21 +30,22 @@ public class CameraController : MonoBehaviour
     }
     void LateUpdate()
     {
-        if (SceneController.getOnIOS())
+        if (SceneController.getOnMobile())
         {
-            IOSControls();
+            MobileControls(false);
         }
         else
         {
-            WindowsControls();
+            MobileControls(true);
+            //WindowsControls();
             
         }
 
     }
     private void WindowsControls()
     {
-        if (Cursor.lockState == CursorLockMode.Locked)
-        {
+        //if (Cursor.lockState == CursorLockMode.Locked)
+        //{
             float speed = moveSpeed;
             Vector3 moveForward = transform.forward;
             moveForward.y = 0;
@@ -57,8 +62,9 @@ public class CameraController : MonoBehaviour
 
             transform.eulerAngles = new Vector3(pitch, yaw, 0f);
 
-        }
+        //}
 
+        /*
         if (Cursor.lockState == CursorLockMode.None && Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -66,10 +72,14 @@ public class CameraController : MonoBehaviour
         else if (Cursor.lockState == CursorLockMode.Locked && Input.GetKeyDown(KeyCode.Escape))
         {
             Cursor.lockState = CursorLockMode.None;
-        }
+        }*/
     }
-    private void IOSControls()
+    private void MobileControls(bool windows)
     {
+        if (windows)
+        {
+
+        }
         if (SceneController.getArMode())
         {
             //rotate object y-Axis |rotate gesture
@@ -77,7 +87,8 @@ public class CameraController : MonoBehaviour
         }
         else
         {
-            
+
+            /*
             if(Input.touchCount > 0)
             {
                 Debug.Log(Input.GetTouch(0).tapCount);
@@ -90,6 +101,42 @@ public class CameraController : MonoBehaviour
                     yaw = deltaPos.x * touchSenitivity;
                     voxelObject.transform.eulerAngles = new Vector3(pitch, yaw, 0f);
                 }
+                else
+                {
+
+                }
+            }*/
+
+            if (Input.GetMouseButton(1))
+            {
+                Vector3 deltaPos = Input.mousePosition - oldMousePos;
+                if(Mathf.Abs(deltaPos.y) > Mathf.Abs(deltaPos.x))
+                {
+                    if(Mathf.Abs(deltaPos.x) <= 2 && Mathf.Abs(deltaPos.y) >2)
+                    {
+                        deltaPos.x = 0;
+                    }
+                }
+                else
+                {
+                    if (Mathf.Abs(deltaPos.y) <= 2 && Mathf.Abs(deltaPos.x) > 2)
+                    {
+                        deltaPos.y = 0;
+                    }
+                }
+                pitch = -deltaPos.y * touchSenitivity;
+                yaw = deltaPos.x * touchSenitivity;
+
+                transform.parent.transform.Rotate(0, yaw, 0, Space.World);
+                transform.parent.transform.Rotate(pitch, 0, 0, Space.Self);
+                directionalLight.transform.Rotate(0, yaw, 0, Space.World);
+                directionalLight.transform.Rotate(pitch, 0, 0, Space.Self);
+
+                oldMousePos = Input.mousePosition;
+            }
+            else
+            {
+                oldMousePos = Input.mousePosition;
             }
 
 

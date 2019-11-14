@@ -16,7 +16,7 @@ public class SceneController : MonoBehaviour
     public UIController UIController;
 
     private static bool arMode = false;
-    private static bool onIOS = false;
+    private static bool onMobile = false;
 
     private Vector3 originPointerPosition;
 
@@ -34,38 +34,30 @@ public class SceneController : MonoBehaviour
 
     private bool m_firstClickFrame = false;
     private Renderer rend;
+    [SerializeField]
+    private Vector3Int dimension = new Vector3Int(21, 21, 21); //for inspector
+    public static Vector3Int dimensions;
+    public static GameObject[,,] gridOfObjects;
 
-    public int maxUndo = 30;
-    public static List<ArrayList> m_lastActions = new List<ArrayList>();
-    public static List<ArrayList> m_lastUndos = new List<ArrayList>();
-
-    
-    public List<ArrayList> m_lastActionsTest = new List<ArrayList>();
-
-    public List<ArrayList> m_lastlastUndosTest = new List<ArrayList>();
+    public UndoRedo undoRedoScript;
 
     // Start is called before the first frame update
     void Start()
     {
         string operatingSystem = SystemInfo.operatingSystem;
-        if (operatingSystem[0] == 'i')
+        if (operatingSystem[0] == 'i' || operatingSystem[0] == 'A')
         {
-            onIOS = true;
-            UIController.SetupIOSUI();
+            onMobile = true;
             Application.targetFrameRate = 30;
         }
-        else
+        else if(operatingSystem[0] == 'W')
         {
-            onIOS = false;
             Application.targetFrameRate = 60;
         }
         Debug.Log(operatingSystem);
         UIController.SetDebugMode(debugMode);
-        if (debugMode)
-        {
-            m_lastActionsTest = m_lastActions;
-            m_lastlastUndosTest = m_lastUndos;
-        }
+        dimensions = dimension;
+        gridOfObjects = new GameObject[dimensions.x,dimensions.y,dimensions.z];
     }
 
     // Update is called once per frame
@@ -73,7 +65,7 @@ public class SceneController : MonoBehaviour
     {
         
 
-        if (!EventSystem.current.IsPointerOverGameObject() && Cursor.lockState == CursorLockMode.Locked)
+        if (!EventSystem.current.IsPointerOverGameObject())
         {
             mouseManager();
             RaycastHit hit;
@@ -107,17 +99,23 @@ public class SceneController : MonoBehaviour
 
                 if (m_clicked)
                 {
-                    GameObject cube = Instantiate(voxel, endPosition, voxelModel.transform.rotation);
-                    cube.transform.parent = voxelModel.transform;
-
-                    ArrayList action = new ArrayList();
-                    action.Add(0); //0 -> placed object
-                    action.Add(cube); //v -> gameobject
-                    m_lastActions.Add(action);
-                    if (m_lastActions.Count > 10)
+                    if(((int)endPosition.x + (int)(dimensions.x / 2) >= 0 && (int)endPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)endPosition.y >= 0 && (int)endPosition.y < dimensions.y) 
+                        && ((int)endPosition.z + (int)(dimensions.z / 2) >= 0 && (int)endPosition.z + (int)(dimensions.z / 2) < dimensions.z))
                     {
-                        m_lastActions.RemoveAt(0);
+                        GameObject cube = Instantiate(voxel, endPosition, voxelModel.transform.rotation);
+                        cube.transform.parent = voxelModel.transform;
+                        ArrayList cubes = new ArrayList();
+                        cubes.Add(cube);
+
+                        ArrayList action = new ArrayList();
+                        action.Add(0); //0 -> placed object
+                        action.Add(cubes); //v -> arraylist of gameobject
+
+                        gridOfObjects[(int)endPosition.x + (int)(dimensions.x / 2), (int)endPosition.y, (int)endPosition.z + (int)(dimensions.z / 2)] = cube;
+
+                        undoRedoScript.addAction(action);
                     }
+                    
                 }
                 else if (m_mouseHold)
                 {
@@ -136,70 +134,80 @@ public class SceneController : MonoBehaviour
                 }
                 else if (m_holdRelease)
                 {
-
-                    Vector2[] bounds = new Vector2[3];
-                    if(endPosition.x < originPointerPosition.x)
+                    if (((int)endPosition.x + (int)(dimensions.x / 2) >= 0 && (int)endPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)endPosition.y >= 0 && (int)endPosition.y < dimensions.y)
+                        && ((int)endPosition.z + (int)(dimensions.z / 2) >= 0 && (int)endPosition.z + (int)(dimensions.z / 2) < dimensions.z) && ((int)originPointerPosition.x + (int)(dimensions.x / 2) >= 0 && (int)originPointerPosition.x + (int)(dimensions.x / 2) < dimensions.x) && ((int)originPointerPosition.y >= 0 && (int)originPointerPosition.y < dimensions.y)
+                        && ((int)originPointerPosition.z + (int)(dimensions.z / 2) >= 0 && (int)originPointerPosition.z + (int)(dimensions.z / 2) < dimensions.z))
                     {
-                        bounds[0] = new Vector2(endPosition.x, originPointerPosition.x);
-                    }
-                    else
-                    {
-                        bounds[0] = new Vector2(originPointerPosition.x, endPosition.x);
-                    }
-
-                    if (endPosition.y < originPointerPosition.y)
-                    {
-                        bounds[1] = new Vector2(endPosition.y, originPointerPosition.y);
-                    }
-                    else
-                    {
-                        bounds[1] = new Vector2(originPointerPosition.y, endPosition.y);
-                    }
-
-                    if (endPosition.z < originPointerPosition.z)
-                    {
-                        bounds[2] = new Vector2(endPosition.z, originPointerPosition.z);
-                    }
-                    else
-                    {
-                        bounds[2] = new Vector2(originPointerPosition.z, endPosition.z);
-                    }
-
-                    GameObject group = new GameObject();
-                    group.transform.position = new Vector3(0, 0, 0);
-                    group.transform.parent = voxelModel.transform;
-                    group.name = "goupedCubes";
-
-                    for(int i = (int)bounds[0].x; i <= bounds[0].y; i++)
-                    {
-                        for (int w = (int)bounds[1].x; w <= bounds[1].y; w++)
+                        //start- & end-position of selection
+                        Vector2[] bounds = new Vector2[3];
+                        if (endPosition.x < originPointerPosition.x)
                         {
-                            for (int t = (int)bounds[2].x; t <= bounds[2].y; t++)
+                            bounds[0] = new Vector2(endPosition.x, originPointerPosition.x);
+                        }
+                        else
+                        {
+                            bounds[0] = new Vector2(originPointerPosition.x, endPosition.x);
+                        }
+
+                        if (endPosition.y < originPointerPosition.y)
+                        {
+                            bounds[1] = new Vector2(endPosition.y, originPointerPosition.y);
+                        }
+                        else
+                        {
+                            bounds[1] = new Vector2(originPointerPosition.y, endPosition.y);
+                        }
+
+                        if (endPosition.z < originPointerPosition.z)
+                        {
+                            bounds[2] = new Vector2(endPosition.z, originPointerPosition.z);
+                        }
+                        else
+                        {
+                            bounds[2] = new Vector2(originPointerPosition.z, endPosition.z);
+                        }
+
+                        ArrayList replacedCubes = new ArrayList();
+                        ArrayList placedCubes = new ArrayList();
+
+                        for (int i = (int)bounds[0].x; i <= bounds[0].y; i++)
+                        {
+                            for (int w = (int)bounds[1].x; w <= bounds[1].y; w++)
                             {
+                                for (int t = (int)bounds[2].x; t <= bounds[2].y; t++)
+                                {
+                                    GameObject cube = Instantiate(voxel, new Vector3(i, w, t), voxelModel.transform.rotation);
+                                    cube.transform.parent = voxelModel.transform;
 
-                                Debug.Log("endPosition " + endPosition + " originPointerPosition" + originPointerPosition + " Durchlaufposition: (" + i + "," + w + "," + t +")");
-                                GameObject cube = Instantiate(voxel, new Vector3(i,w,t), voxelModel.transform.rotation);
+                                    if(gridOfObjects[i+ (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] != null)
+                                    {
+                                        replacedCubes.Add(gridOfObjects[i + (int)(dimensions.x / 2), w + (int)(dimensions.y / 2), t + (int)(dimensions.z / 2)]);
+                                        gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)].gameObject.SetActive(false);
+                                    }
+                                    gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] = cube;
+                                    placedCubes.Add(cube);
 
-                                cube.transform.parent = group.transform;
-
+                                }
                             }
                         }
-                    }
-                    group.transform.parent = voxelModel.transform;
+                        ArrayList action = new ArrayList();
+                        if (replacedCubes.Count == 0)
+                        {
+                            action.Add(0); //0 -> placed object
+                            action.Add(placedCubes); //group -> group of gameobjects
+                        }
+                        else
+                        {
+                            action.Add(2); //2 -> replaced object
+                            action.Add(placedCubes); //placedCubes -> group of placed gameobjects
+                            action.Add(replacedCubes); //replacedCubes -> group of replaced gameobjects
+                        }
 
+                        undoRedoScript.addAction(action);
+
+                    }
                     tileSelector.transform.localScale = new Vector3(1, 1, 1);
                     tileSelector.transform.position = endPosition;
-
-                    ArrayList action = new ArrayList();
-                    action.Add(0); //0 -> placed object
-                    action.Add(group); //group -> group of gameobjects
-
-                    m_lastActions.Add(action);
-                    if (m_lastActions.Count > 10)
-                    {
-                        m_lastActions.RemoveAt(0);
-                    }
-
                     int children = tileSelector.transform.GetChild(0).transform.childCount;
                     for (int i = 0; i < children; ++i)
                     {
@@ -207,12 +215,13 @@ public class SceneController : MonoBehaviour
                         rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
                         rend.material.SetFloat("Vector1_D6E874BF", 0.8f);
                     }
-                }else if (m_rClicked)
+                }
+                else if (m_rClicked)
                 {
-                    Debug.Log("HitObj: " + hit.transform.gameObject.name + " Plane: " + groundPlane.name);
                     if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
                     {
-                        DeleteObj(hit.transform.gameObject);
+                        Vector3Int v = new Vector3Int((int)(endPosition.x-hit.normal.x), (int)(endPosition.y - hit.normal.y), (int)(endPosition.z - hit.normal.z));
+                        DeleteObj(hit.transform.gameObject, v);
                     }
                 }
 
@@ -234,10 +243,11 @@ public class SceneController : MonoBehaviour
     {
         return arMode;
     }
-    public static bool getOnIOS()
+    public static bool getOnMobile()
     {
-        return onIOS;
+        return onMobile;
     }
+
     private void mouseManager()
     {
         if (Input.GetMouseButton(0) && !m_clickBegin)
@@ -322,18 +332,17 @@ public class SceneController : MonoBehaviour
             m_rHoldRelease = false;
         }
     }
-    public void DeleteObj(GameObject g)
+    public void DeleteObj(GameObject g, Vector3Int position)
     {
         ArrayList action = new ArrayList();
+        ArrayList cubes = new ArrayList();
+        cubes.Add(g);
         action.Add(1); //1 -> deleted object
-        action.Add(g); //v -> gameobject
+        action.Add(cubes); //v -> gameobject
 
+        gridOfObjects[position.x + (int)(dimensions.x / 2), position.y, position.z + (int)(dimensions.z / 2)] = null;
         g.SetActive(false);
-        m_lastActions.Add(action);
-        if (m_lastActions.Count > 10)
-        {
-            m_lastActions.RemoveAt(0);
-        }
+        undoRedoScript.addAction(action);
     }
 
 }

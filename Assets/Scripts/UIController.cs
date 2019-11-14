@@ -12,16 +12,20 @@ public class UIController : MonoBehaviour
     public GameObject doneButton;
     private bool debugMode = false;
     public Text fps;
+    public Text operatingSystem;
 
     private Vector3 originalEulers;
     private Vector3 transformEulers;
+    private int remainingFrames;
     public int timeInFrames = 100;
+    public GameObject debugInfos;
+    private bool refocusAnimation = false;
+
 
     // Start is called before the first frame update
     void Start()
     {
-        originalEulers = voxelModel.transform.eulerAngles;
-        transformEulers = -1 * originalEulers / timeInFrames;
+        operatingSystem.text = SystemInfo.operatingSystem;
     }
 
     // Update is called once per frame
@@ -29,19 +33,31 @@ public class UIController : MonoBehaviour
     {
         if (debugMode)
         {
-            if(fps.enabled)
+            if(debugInfos.activeSelf)
             {
-                fps.text = (int)(1.0 / Time.deltaTime) + " FPS";
+                fps.text = (int)(1.0 / Time.smoothDeltaTime) + " FPS";
             }
             else
             {
-                fps.enabled = true;
+                debugInfos.SetActive(true);
             }
-        }else if (fps.enabled)
+        }else if (debugInfos.activeSelf)
         {
-            fps.enabled = false;
+            debugInfos.SetActive(false);
         }
-        
+        if (refocusAnimation)
+        {
+            if (remainingFrames > 0)
+            {
+                voxelModel.transform.eulerAngles += transformEulers;
+                remainingFrames--;
+            }
+            else
+            {
+                refocusAnimation = false;
+                remainingFrames = timeInFrames;
+            }
+        }
     }
     public void editDone()
     {
@@ -71,71 +87,22 @@ public class UIController : MonoBehaviour
             SceneManager.LoadScene("MainScene");
         }
     }
-    public void SetupIOSUI()
-    {
 
-    }
     public void SetDebugMode(bool debugMode)
     {
         this.debugMode = debugMode;
     }
-    public void Undo()
-    {
 
-        if (SceneController.m_lastActions.Count != 0)
-        {
-            SceneController.m_lastUndos.Add(SceneController.m_lastActions[SceneController.m_lastActions.Count - 1]);
-            if (SceneController.m_lastUndos.Count > 10)
-            {
-                if ((int)SceneController.m_lastUndos[0][0] == 0)
-                {
-                    Destroy((GameObject)SceneController.m_lastUndos[0][1]);
-                }
-                SceneController.m_lastUndos.RemoveAt(0);
-            }
-            if((int)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][0] == 0)
-            {
-                ((GameObject)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][1]).SetActive(false);
-            }else if((int)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][0] == 1)
-            {
-                ((GameObject)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][1]).SetActive(true);
-            }
-            
-            SceneController.m_lastActions.RemoveAt(SceneController.m_lastActions.Count - 1);
-
-        }
-    }
-    public void Redo()
-    {
-        if(SceneController.m_lastUndos.Count != 0)
-        {
-            SceneController.m_lastActions.Add(SceneController.m_lastUndos[SceneController.m_lastUndos.Count - 1]);
-            if (SceneController.m_lastActions.Count > 10)
-            {
-                if ((int)SceneController.m_lastActions[0][0] == 1)
-                {
-                    Destroy((GameObject)SceneController.m_lastActions[0][1]);
-                }
-                SceneController.m_lastActions.RemoveAt(0);
-            }
-            if ((int)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][0] == 0)
-            {
-                ((GameObject)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][1]).SetActive(true);
-            }
-            else if ((int)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][0] == 1)
-            {
-                ((GameObject)SceneController.m_lastActions[SceneController.m_lastActions.Count - 1][1]).SetActive(false);
-            }
-            SceneController.m_lastUndos.RemoveAt(SceneController.m_lastUndos.Count - 1);
-        }
-    }
+    
 
     public void ResetRotation()
     {
-        if (timeInFrames > 0)
+        if (!refocusAnimation)
         {
-            voxelModel.transform.eulerAngles += transformEulers;
-            timeInFrames--;
+            transformEulers = -1 * voxelModel.transform.eulerAngles / timeInFrames;
+            refocusAnimation = true;
         }
+        
     }
+
 }
