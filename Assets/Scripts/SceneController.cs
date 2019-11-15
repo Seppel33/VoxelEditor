@@ -207,7 +207,7 @@ public class SceneController : MonoBehaviour
 
                                 if (gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] != null)
                                 {
-                                    replacedCubes.Add(gridOfObjects[i + (int)(dimensions.x / 2), w + (int)(dimensions.y / 2), t + (int)(dimensions.z / 2)]);
+                                    replacedCubes.Add(gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)]);
                                     gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)].gameObject.SetActive(false);
                                 }
                                 gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] = cube;

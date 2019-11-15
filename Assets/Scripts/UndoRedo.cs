@@ -110,14 +110,14 @@ public class UndoRedo : MonoBehaviour
             {
                 for (int i = 0; i < ((ArrayList)m_lastActions[0][1]).Count; i++)
                 {
-                    if (((GameObject)((ArrayList)m_lastActions[0][1])[i]).activeSelf)
+                    if (!((GameObject)((ArrayList)m_lastActions[0][1])[i]).activeInHierarchy)
                     {
                         Destroy((GameObject)((ArrayList)m_lastActions[0][1])[i]);
                     } 
                 }
                 for (int i = 0; i < ((ArrayList)m_lastActions[0][2]).Count; i++)
                 {
-                    if (((GameObject)((ArrayList)m_lastActions[0][2])[i]).activeSelf)
+                    if (!((GameObject)((ArrayList)m_lastActions[0][2])[i]).activeInHierarchy)
                     {
                         Destroy((GameObject)((ArrayList)m_lastActions[0][2])[i]);
                     }
