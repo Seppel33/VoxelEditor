@@ -108,18 +108,19 @@ public class UndoRedo : MonoBehaviour
             }
             else if((int)m_lastActions[0][0] == 2)
             {
-                int side;
-                if (((GameObject)((ArrayList)m_lastActions[0][1])[0]).activeSelf)
+                for (int i = 0; i < ((ArrayList)m_lastActions[0][1]).Count; i++)
                 {
-                    side = 2;
+                    if (((GameObject)((ArrayList)m_lastActions[0][1])[i]).activeSelf)
+                    {
+                        Destroy((GameObject)((ArrayList)m_lastActions[0][1])[i]);
+                    } 
                 }
-                else
+                for (int i = 0; i < ((ArrayList)m_lastActions[0][2]).Count; i++)
                 {
-                    side = 1;
-                }
-                for (int i = 0; i < ((ArrayList)m_lastActions[0][side]).Count; i++)
-                {
-                    Destroy((GameObject)((ArrayList)m_lastActions[0][side])[i]);
+                    if (((GameObject)((ArrayList)m_lastActions[0][2])[i]).activeSelf)
+                    {
+                        Destroy((GameObject)((ArrayList)m_lastActions[0][2])[i]);
+                    }
                 }
             }
             m_lastActions.RemoveAt(0);

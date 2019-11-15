@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEditor;
 
 public class UIController : MonoBehaviour
 {
     public GameObject combinedMesh;
     public GameObject voxelModel;
-    private bool m_editDone = false;
     public GameObject doneButton;
     private bool debugMode = false;
     public Text fps;
@@ -35,7 +35,7 @@ public class UIController : MonoBehaviour
     {
         if (debugMode)
         {
-            if(debugInfos.activeSelf)
+            if (debugInfos.activeSelf)
             {
                 fps.text = (int)(1.0 / Time.smoothDeltaTime) + " FPS";
             }
@@ -43,7 +43,8 @@ public class UIController : MonoBehaviour
             {
                 debugInfos.SetActive(true);
             }
-        }else if (debugInfos.activeSelf)
+        }
+        else if (debugInfos.activeSelf)
         {
             debugInfos.SetActive(false);
         }
@@ -77,16 +78,27 @@ public class UIController : MonoBehaviour
 
                 i++;
             }
-            combinedMesh.transform.GetComponent<MeshFilter>().mesh = new Mesh();
-            combinedMesh.transform.GetComponent<MeshFilter>().mesh.CombineMeshes(combine, true);
-            combinedMesh.transform.GetComponent<MeshFilter>().mesh.RecalculateBounds();
-            combinedMesh.transform.GetComponent<MeshFilter>().mesh.RecalculateNormals();
-            combinedMesh.transform.GetComponent<MeshFilter>().mesh.Optimize();
+            combinedMesh = PrefabUtility.SaveAsPrefabAssetAndConnect(combinedMesh, "Assets/CustomModels/CombinedMesh.prefab", InteractionMode.AutomatedAction);
+            MeshFilter mFilter = combinedMesh.AddComponent<MeshFilter>(); ;
+            mFilter.sharedMesh = new Mesh();
+            mFilter.sharedMesh.CombineMeshes(combine, true);
+            mFilter.sharedMesh.RecalculateBounds();
+            mFilter.sharedMesh.RecalculateNormals();
+            mFilter.sharedMesh.Optimize();
 
-            combinedMesh.transform.gameObject.SetActive(true);
-            m_editDone = true;
+
+
+            //combinedMesh.transform.gameObject.SetActive(true);
             doneButton.SetActive(false);
-            SceneManager.LoadScene("MainScene");
+
+
+
+            MeshFilter m = (MeshFilter)Instantiate(combinedMesh.transform.GetComponent<MeshFilter>());
+            AssetDatabase.CreateAsset(m.mesh, "Assets/CustomModels/MyMesh.asset");
+            AssetDatabase.SaveAssets();
+            combinedMesh.transform.GetComponent<MeshFilter>().mesh = m.mesh;
+
+            //SceneManager.LoadScene("MainScene");
         }
     }
 
@@ -95,7 +107,7 @@ public class UIController : MonoBehaviour
         this.debugMode = debugMode;
     }
 
-    
+
 
     public void ResetRotation()
     {
@@ -104,7 +116,7 @@ public class UIController : MonoBehaviour
             transformEulers = -1 * voxelModel.transform.eulerAngles / timeInFrames;
             refocusAnimation = true;
         }
-        
+
     }
 
     public void setSelectedState(int state)
