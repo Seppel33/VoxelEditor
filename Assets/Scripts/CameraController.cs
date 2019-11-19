@@ -18,7 +18,6 @@ public class CameraController : MonoBehaviour
 
     private float pitch;
     private float yaw;
-    private bool inSwipeAnimation = false;
 
     private Vector3 oldMousePos;
 
@@ -35,10 +34,16 @@ public class CameraController : MonoBehaviour
         }
         else
         {
-
-            MobileControls(true);
+            if (SceneController.activeTouchControl)
+            {
+                MobileControls(false);
+            }
+            else
+            {
+                MobileControls(true);
+            }
             //WindowsControls();
-            
+
         }
 
     }
@@ -81,20 +86,6 @@ public class CameraController : MonoBehaviour
             if (Input.GetMouseButton(1))
             {
                 Vector3 deltaPos = Input.mousePosition - oldMousePos;
-                if (Mathf.Abs(deltaPos.y) > Mathf.Abs(deltaPos.x))
-                {
-                    if (Mathf.Abs(deltaPos.x) <= 2 && Mathf.Abs(deltaPos.y) > 2)
-                    {
-                        deltaPos.x = 0;
-                    }
-                }
-                else
-                {
-                    if (Mathf.Abs(deltaPos.y) <= 2 && Mathf.Abs(deltaPos.x) > 2)
-                    {
-                        deltaPos.y = 0;
-                    }
-                }
                 pitch = -deltaPos.y * touchSenitivity;
                 yaw = deltaPos.x * touchSenitivity;
 
@@ -119,21 +110,27 @@ public class CameraController : MonoBehaviour
             }
             else
             {
-                if(Input.touchCount > 0)
+                int buggyTouchCount = 0;
+                if (Application.isEditor && SceneController.buggyTouchCountInEdit)
                 {
-                    Debug.Log(Input.GetTouch(0).tapCount);
-                    if(Input.touchCount == 2)
-                    {
-                        Touch touch1 = Input.GetTouch(0);
-                        Touch touch2 = Input.GetTouch(1);
-                        Vector2 deltaPos = (touch1.deltaPosition + touch2.deltaPosition) / 2;
-                        pitch = deltaPos.y * touchSenitivity;
-                        yaw = deltaPos.x * touchSenitivity;
-                        voxelObject.transform.eulerAngles = new Vector3(pitch, yaw, 0f);
-                    }
-                    else
-                    {
+                    buggyTouchCount = 1;
+                }
 
+                if (Input.touchCount > buggyTouchCount)
+                {
+                    if (Input.touchCount == buggyTouchCount + 2)
+                    {
+                        Touch touch1 = Input.GetTouch(buggyTouchCount);
+                        Touch touch2 = Input.GetTouch(buggyTouchCount + 1);
+                        Debug.Log("Touch1 Pos: " + touch1.position + " | Touch2 Pos: " + touch2.position);
+                        Vector2 deltaPos = (touch1.deltaPosition + touch2.deltaPosition) / 2;
+                        pitch = -deltaPos.y * touchSenitivity;
+                        yaw = deltaPos.x * touchSenitivity;
+
+                        transform.parent.transform.Rotate(0, yaw, 0, Space.World);
+                        transform.parent.transform.Rotate(pitch, 0, 0, Space.Self);
+                        directionalLight.transform.Rotate(0, yaw, 0, Space.World);
+                        directionalLight.transform.Rotate(pitch, 0, 0, Space.Self);
                     }
                 }
             }

@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEditor;
+using System.Linq;
 
 public class UIController : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class UIController : MonoBehaviour
     private bool debugMode = false;
     public Text fps;
     public Text operatingSystem;
+    public Text monitor;
 
     private Vector3 originalEulers;
     private Vector3 transformEulers;
@@ -28,6 +30,14 @@ public class UIController : MonoBehaviour
     void Start()
     {
         operatingSystem.text = SystemInfo.operatingSystem;
+        
+
+
+        Debug.Log("dc: " + Display.displays.Length + " ss: " + Input.stylusTouchSupported + " ts: " + Input.touchSupported);
+        // Display.displays[0] is the primary, default display and is always ON.
+        // Check if additional displays are available and activate each.
+        monitor.text = " Displays: " + Display.displays.Length + " " + Input.stylusTouchSupported + " " + Input.touchSupported + " " + Input.touchCount;
+        
     }
 
     // Update is called once per frame
@@ -38,6 +48,7 @@ public class UIController : MonoBehaviour
             if (debugInfos.activeSelf)
             {
                 fps.text = (int)(1.0 / Time.smoothDeltaTime) + " FPS";
+                monitor.text = Display.displays[Display.displays.Length - 1].ToString() + " Number: " + Display.displays.Length + " " + Input.stylusTouchSupported + " " + Input.touchSupported + " " + Input.touchCount;
             }
             else
             {
@@ -66,6 +77,9 @@ public class UIController : MonoBehaviour
     {
         if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
         {
+            //opimizeMesh();
+
+            
             MeshFilter[] meshFilters = voxelModel.GetComponentsInChildren<MeshFilter>();
             CombineInstance[] combine = new CombineInstance[meshFilters.Length];
 
@@ -78,7 +92,7 @@ public class UIController : MonoBehaviour
 
                 i++;
             }
-            combinedMesh = PrefabUtility.SaveAsPrefabAssetAndConnect(combinedMesh, "Assets/CustomModels/CombinedMesh.prefab", InteractionMode.AutomatedAction);
+            //combinedMesh = PrefabUtility.SaveAsPrefabAssetAndConnect(combinedMesh, "Assets/CustomModels/CombinedMesh.prefab", InteractionMode.AutomatedAction);
             MeshFilter mFilter = combinedMesh.AddComponent<MeshFilter>(); ;
             mFilter.sharedMesh = new Mesh();
             mFilter.sharedMesh.CombineMeshes(combine, true);
@@ -94,11 +108,90 @@ public class UIController : MonoBehaviour
 
 
             MeshFilter m = (MeshFilter)Instantiate(combinedMesh.transform.GetComponent<MeshFilter>());
-            AssetDatabase.CreateAsset(m.mesh, "Assets/CustomModels/MyMesh.asset");
-            AssetDatabase.SaveAssets();
+            //AssetDatabase.CreateAsset(m.mesh, "Assets/CustomModels/MyMesh.asset");
+            //AssetDatabase.SaveAssets();
             combinedMesh.transform.GetComponent<MeshFilter>().mesh = m.mesh;
 
             //SceneManager.LoadScene("MainScene");
+            
+        }
+    }
+
+    private void opimizeMesh()
+    {
+        for(int i = 0; i<voxelModel.transform.childCount; i++)
+        {
+            bool[] neighbor = new bool[6];
+            int neighbors = 0;
+
+            Vector3Int objPos = new Vector3Int((int)voxelModel.transform.GetChild(i).transform.position.x, (int)voxelModel.transform.GetChild(i).transform.position.y, (int)voxelModel.transform.GetChild(i).transform.position.z);
+            if (objPos.y < SceneController.dimensions.y)
+            {
+                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y+1, objPos.z+ SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[0] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.y > 0)
+            {
+                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y-1, objPos.z + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[1] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.x < SceneController.dimensions.x/2)
+            {
+                if (SceneController.gridOfObjects[objPos.x+1+ SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[2] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.x > -SceneController.dimensions.x / 2)
+            {
+                if (SceneController.gridOfObjects[objPos.x-1+ SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[3] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.z < SceneController.dimensions.z / 2)
+            {
+                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y, objPos.z+1 + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[4] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.z > -SceneController.dimensions.z / 2)
+            {
+                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y, objPos.z-1 + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[5] = true;
+                    neighbors++;
+                }
+            }
+            if (neighbors == 6)
+            {
+                Destroy(voxelModel.transform.GetChild(i));
+            }
+            else if(neighbors > 0)
+            {
+                Mesh mesh = voxelModel.transform.GetChild(i).transform.GetComponent<MeshFilter>().mesh;
+                int[] oldTriangles = mesh.triangles;
+                int[] newTriangles = new int[mesh.triangles.Length - neighbors*2*3];
+
+                HashSet<int> indices = new HashSet<int>(mesh.triangles.AsEnumerable().Distinct().Where(index =>
+                mesh.normals[index] == Vector3.up
+                ).ToList());
+                int counter = 0;
+                foreach (int h in indices)
+                {
+                    newTriangles[counter++] = h;
+                }
+            }
         }
     }
 

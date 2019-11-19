@@ -99,6 +99,7 @@ public class UndoRedo : MonoBehaviour
         m_lastActions.Add(action);
         if (m_lastActions.Count > maxUndo)
         {
+            /*
             if((int)m_lastActions[0][0] == 1)
             {
                 for (int i = 0; i < ((ArrayList)m_lastActions[0][1]).Count; i++)
@@ -122,7 +123,7 @@ public class UndoRedo : MonoBehaviour
                         Destroy((GameObject)((ArrayList)m_lastActions[0][2])[i]);
                     }
                 }
-            }
+            }*/
             m_lastActions.RemoveAt(0);
         }
         increaseUndoPosition();
