@@ -315,10 +315,10 @@ public class UIController : MonoBehaviour
         if(longSide/ Screen.dpi < 6)//Mobilephone
         {
             dpiScaler = Screen.dpi / 1800f;
-        }else if(longSide / Screen.dpi < 12)
+        }else if(longSide / Screen.dpi < 12)//Tablet
         {
             dpiScaler = Screen.dpi / 2200f;
-        }else if(longSide / Screen.dpi > 39)
+        }else if(longSide / Screen.dpi > 39)//Big Screen
         {
             dpiScaler = -Screen.dpi / 2200f;
         }
