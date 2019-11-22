@@ -12,13 +12,8 @@ public class SceneController : MonoBehaviour
     public GameObject deleteSelector;
     public GameObject voxelModel;
     public GameObject voxel;
-
-    
-    public bool debugMode = false;
-    public bool buggyTouchCountInEditor = false; //for inspector
-    public static bool buggyTouchCountInEdit;
-    public static bool activeTouchControl = false;
     public UIController UIController;
+    public UndoRedo undoRedoScript;
 
     private static bool arMode = false;
     private static bool vrMode = false;
@@ -32,10 +27,14 @@ public class SceneController : MonoBehaviour
     public static Vector3Int dimensions;
     public static GameObject[,,] gridOfObjects;
 
-    public UndoRedo undoRedoScript;
-
     private bool moveGesture = false;
 
+    [Header("Debug/Temp Settings")]
+    public bool debugMode = true;
+    public bool buggyTouchCountInEditor = false; //for inspector
+    public static bool buggyTouchCountInEdit;
+    public bool activeTouchControls = false;
+    public static bool activeTouchControl;
     private int touchCountEditorFix = 0;
     // Start is called before the first frame update
     void Start()
@@ -48,16 +47,12 @@ public class SceneController : MonoBehaviour
         if (operatingSystem[0] == 'i' || operatingSystem[0] == 'A')
         {
             onMobile = true;
-            Application.targetFrameRate = 30;
-        }
-        else if (operatingSystem[0] == 'W')
-        {
-            Application.targetFrameRate = 60;
         }
         Debug.Log(operatingSystem);
         Debug.Log(SystemInfo.deviceModel);
         UIController.SetDebugMode(debugMode);
         buggyTouchCountInEdit = buggyTouchCountInEditor;
+        activeTouchControl = activeTouchControls;
         dimensions = dimension;
         gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
     }
@@ -65,57 +60,56 @@ public class SceneController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!EventSystem.current.IsPointerOverGameObject())
+        if (vrMode)
         {
-            if (vrMode)
-            {
 
-            }
-            else if (arMode)
-            {
+        }
+        else if (arMode)
+        {
 
-            }
-            else
-            {
-                if (activeTouchControl)
-                {
-                    if (Input.touchCount > 1)
-                    {
-                        moveGesture = true;
-
-                    }
-                    else if (Input.touchCount == 0)
-                    {
-                        moveGesture = false;
-                    }
-                    switch (UIController.selectedState)
-                    {
-                        case 0:
-                            touchBuildControl();
-                            break;
-                        case 1:
-                            touchDeleteControl();
-                            break;
-                    }
-                }
-                else
-                {
-                    switch (UIController.selectedState)
-                    {
-                        case 0:
-                            standardBuildControl();
-                            break;
-                        case 1:
-                            standardDeleteControl();
-                            break;
-                    }
-                }
-
-            }
         }
         else
         {
-            tileSelector.SetActive(false);
+            if (activeTouchControl)
+            {
+                if (Input.touchCount > 1)
+                {
+                    moveGesture = true;
+
+                }
+                else if (Input.touchCount == 0)
+                {
+                    moveGesture = false;
+                }
+                switch (UIController.selectedState)
+                {
+                    case 0:
+                        touchBuildControl();
+                        break;
+                    case 1:
+                        touchDeleteControl();
+                        break;
+                    case 2:
+                        touchPaintControl();
+                        break;
+                }
+            }
+            else
+            {
+                switch (UIController.selectedState)
+                {
+                    case 0:
+                        standardBuildControl();
+                        break;
+                    case 1:
+                        standardDeleteControl();
+                        break;
+                    case 2:
+                        standardPaintControl();
+                        break;
+                }
+            }
+
         }
 
     }
@@ -311,6 +305,12 @@ public class SceneController : MonoBehaviour
                             gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)].gameObject.SetActive(false);
                         }
                         gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] = cube;
+
+                        rend = cube.transform.GetComponent<Renderer>();
+                        rend.material.shader = Shader.Find("Shader Graphs/Blocks");
+                        Color c = rend.material.GetColor("Color_E5F6C120");
+                        rend.material.SetColor("Color_E5F6C120", UIController.selectedColor);
+
                         placedCubes.Add(cube);
 
                     }
@@ -467,6 +467,10 @@ public class SceneController : MonoBehaviour
                     deleteSelector.SetActive(false);
                 }
             }
+            else
+            {
+                deleteSelector.SetActive(false);
+            }
         }
         else
         {
@@ -537,8 +541,212 @@ public class SceneController : MonoBehaviour
             rend.material.SetFloat("Vector1_D6E874BF", 0.8f);
         }*/
     }
-    //standardPaintControl
-    //touchPaintControl
+    public void standardPaintControl()
+    {
+        tileSelector.SetActive(false);
+        RaycastHit hit;
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out hit, 100.0f))
+        {
+            if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
+            {
+                Vector3 endPosition = hit.point - hit.normal / 2;
+
+                endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
+                endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
+                endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
+
+                if (endPosition.y < 0)
+                {
+                    endPosition.y = 0;
+                }
+
+                deleteSelector.transform.position = endPosition;
+                deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
+                deleteSelector.SetActive(true);
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    originPointerPosition = endPosition;
+                }
+
+                if (Input.GetMouseButton(0))
+                {
+                    Vector3 difference = endPosition - originPointerPosition;
+                    deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
+                    deleteSelector.transform.position = originPointerPosition + difference / 2;
+
+                    /*
+                    int children = deleteSelector.transform.GetChild(0).transform.childCount;
+                    for (int i = 0; i < children; ++i)
+                    {
+                        rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
+                        rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
+                        rend.material.SetFloat("Vector1_D6E874BF", (deleteSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
+                    }
+                    */
+
+                }
+                else if (Input.GetMouseButtonUp(0))
+                {
+                    paintSelected(endPosition);
+                }
+            }
+            else
+            {
+                deleteSelector.SetActive(false);
+            }
+        }
+    }
+    public void touchPaintControl()
+    {
+        tileSelector.SetActive(false);
+        if ((Input.touchCount < touchCountEditorFix + 2 && Input.touchCount > touchCountEditorFix) && !moveGesture)
+        {
+            RaycastHit hit;
+            Ray ray = Camera.main.ScreenPointToRay(Input.GetTouch(touchCountEditorFix).position);
+            if (Physics.Raycast(ray, out hit, 100.0f))
+            {
+                if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
+                {
+                    Vector3 endPosition = hit.point - hit.normal / 2;
+
+                    endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
+                    endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
+                    endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
+
+                    if (endPosition.y < 0)
+                    {
+                        endPosition.y = 0;
+                    }
+
+                    deleteSelector.transform.position = endPosition;
+                    deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
+                    deleteSelector.SetActive(true);
+                    bool touched = false;
+                    bool endedTouch = false;
+                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began)
+                    {
+                        touched = true;
+                    }
+                    else if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Ended)
+                    {
+                        endedTouch = true;
+                    }
+                    if (touched)
+                    {
+                        originPointerPosition = endPosition;
+                    }
+
+                    if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
+                    {
+                        Vector3 difference = endPosition - originPointerPosition;
+                        deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
+                        deleteSelector.transform.position = originPointerPosition + difference / 2;
+
+                        /*
+                        int children = deleteSelector.transform.GetChild(0).transform.childCount;
+                        for (int i = 0; i < children; ++i)
+                        {
+                            rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
+                            rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
+                            rend.material.SetFloat("Vector1_D6E874BF", (deleteSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
+                        }
+                        */
+
+                    }
+                    else if (endedTouch)
+                    {
+                        paintSelected(endPosition);
+                    }
+                }
+                else
+                {
+                    deleteSelector.SetActive(false);
+                }
+            }
+            else
+            {
+                deleteSelector.SetActive(false);
+            }
+        }
+        else
+        {
+            deleteSelector.SetActive(false);
+        }
+    }
+    private void paintSelected(Vector3 endPosition)
+    {
+        //start- & end-position of selection
+        Vector2[] bounds = new Vector2[3];
+        if (endPosition.x < originPointerPosition.x)
+        {
+            bounds[0] = new Vector2(endPosition.x, originPointerPosition.x);
+        }
+        else
+        {
+            bounds[0] = new Vector2(originPointerPosition.x, endPosition.x);
+        }
+
+        if (endPosition.y < originPointerPosition.y)
+        {
+            bounds[1] = new Vector2(endPosition.y, originPointerPosition.y);
+        }
+        else
+        {
+            bounds[1] = new Vector2(originPointerPosition.y, endPosition.y);
+        }
+
+        if (endPosition.z < originPointerPosition.z)
+        {
+            bounds[2] = new Vector2(endPosition.z, originPointerPosition.z);
+        }
+        else
+        {
+            bounds[2] = new Vector2(originPointerPosition.z, endPosition.z);
+        }
+
+        ArrayList paintedCubes = new ArrayList();
+        ArrayList oldColors = new ArrayList();
+
+        for (int i = (int)bounds[0].x; i <= bounds[0].y; i++)
+        {
+            for (int w = (int)bounds[1].x; w <= bounds[1].y; w++)
+            {
+                for (int t = (int)bounds[2].x; t <= bounds[2].y; t++)
+                {
+
+                    if (gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)] != null)
+                    {
+                        paintedCubes.Add(gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)]);
+                        rend = gridOfObjects[i + (int)(dimensions.x / 2), w, t + (int)(dimensions.z / 2)].transform.GetComponent<Renderer>();
+                        rend.material.shader = Shader.Find("Shader Graphs/Blocks");
+                        oldColors.Add(rend.material.GetColor("Color_E5F6C120"));
+                        rend.material.SetColor("Color_E5F6C120", UIController.selectedColor);
+                    }
+                }
+            }
+        }
+
+        ArrayList action = new ArrayList();
+        action.Add(3); //3 -> painted Object
+        action.Add(paintedCubes); //selected Cubes
+        action.Add(UIController.selectedColor); //new Color
+        action.Add(oldColors);
+
+        undoRedoScript.addAction(action);
+
+        deleteSelector.transform.localScale = new Vector3(1, 1, 1);
+        deleteSelector.transform.position = endPosition;
+        /*
+        int children = deleteSelector.transform.GetChild(0).transform.childCount;
+        for (int i = 0; i < children; ++i)
+        {
+            rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
+            rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
+            rend.material.SetFloat("Vector1_D6E874BF", 0.8f);
+        }*/
+    }
     //arBuildControl
     //arDeleteControl
     //arPaintControl

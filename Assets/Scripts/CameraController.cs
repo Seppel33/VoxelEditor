@@ -100,6 +100,10 @@ public class CameraController : MonoBehaviour
             {
                 oldMousePos = Input.mousePosition;
             }
+            if ((Input.mouseScrollDelta.y < 0 && transform.localPosition.z > -100) || (Input.mouseScrollDelta.y > 0 && (transform.localPosition.z < -5)))
+            {
+                transform.localPosition = new Vector3 (transform.localPosition.x, transform.localPosition.y, transform.localPosition.z + Input.mouseScrollDelta.y);
+            }
         }
         else
         {
@@ -122,7 +126,7 @@ public class CameraController : MonoBehaviour
                     {
                         Touch touch1 = Input.GetTouch(buggyTouchCount);
                         Touch touch2 = Input.GetTouch(buggyTouchCount + 1);
-                        Debug.Log("Touch1 Pos: " + touch1.position + " | Touch2 Pos: " + touch2.position);
+                        //Debug.Log("Touch1 Pos: " + touch1.position + " | Touch2 Pos: " + touch2.position);
                         Vector2 deltaPos = (touch1.deltaPosition + touch2.deltaPosition) / 2;
                         pitch = -deltaPos.y * touchSenitivity;
                         yaw = deltaPos.x * touchSenitivity;

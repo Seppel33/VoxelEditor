@@ -1,12 +1,15 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UndoRedo : MonoBehaviour
 {
     private List<ArrayList> m_lastActions = new List<ArrayList>();
     public int maxUndo = 30;
     private int undoPosition = 0;
+    public Button undoButton;
+    public Button redoButton;
 
     public void Undo()
     {
@@ -46,6 +49,19 @@ public class UndoRedo : MonoBehaviour
                     cube.SetActive(true);
                     SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
                 }
+            }else if((int)m_lastActions[undoPosition][0] == 3)
+            {
+                for (int i = 0; i < ((ArrayList)m_lastActions[undoPosition][1]).Count; i++)
+                {
+                    Renderer rend = ((GameObject)((ArrayList)m_lastActions[undoPosition][1])[i]).transform.GetComponent<Renderer>();
+                    rend.material.shader = Shader.Find("Shader Graphs/Blocks");
+                    rend.material.SetColor("Color_E5F6C120", (Color)((ArrayList)m_lastActions[undoPosition][3])[i]);
+                }
+            }
+            redoButton.interactable = true;
+            if(undoPosition == 0)
+            {
+                undoButton.interactable = false;
             }
         }
     }
@@ -88,8 +104,21 @@ public class UndoRedo : MonoBehaviour
                     cube.SetActive(true);
                     SceneController.gridOfObjects[(int)cube.transform.position.x + (int)(SceneController.dimensions.x / 2), (int)cube.transform.position.y, (int)cube.transform.position.z + (int)(SceneController.dimensions.z / 2)] = cube;
                 }
+            }else if((int)m_lastActions[undoPosition][0] == 3)
+            {
+                for (int i = 0; i < ((ArrayList)m_lastActions[undoPosition][1]).Count; i++)
+                {
+                    Renderer rend = ((GameObject)((ArrayList)m_lastActions[undoPosition][1])[i]).transform.GetComponent<Renderer>();
+                    rend.material.shader = Shader.Find("Shader Graphs/Blocks");
+                    rend.material.SetColor("Color_E5F6C120", (Color)m_lastActions[undoPosition][2]);
+                }
             }
             increaseUndoPosition();
+            undoButton.interactable = true;
+            if (undoPosition == m_lastActions.Count)
+            {
+                redoButton.interactable = false;
+            }
         }
     }
 
@@ -127,7 +156,7 @@ public class UndoRedo : MonoBehaviour
             m_lastActions.RemoveAt(0);
         }
         increaseUndoPosition();
-        
+        undoButton.interactable = true;
     }
 
     private void increaseUndoPosition()
@@ -152,12 +181,12 @@ public class UndoRedo : MonoBehaviour
             {
                 for (int k = 0; k < ((ArrayList)m_lastActions[i][1]).Count; k++)
                 {
-                    Destroy((GameObject)((ArrayList)m_lastActions[i][1])[k]);
+                    //Destroy((GameObject)((ArrayList)m_lastActions[i][1])[k]);
                 }
             }
             m_lastActions.RemoveAt(i);
         }
-
+        redoButton.interactable = false;
     }
 
 }

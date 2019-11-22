@@ -10,7 +10,7 @@ public class UIController : MonoBehaviour
 {
     public GameObject combinedMesh;
     public GameObject voxelModel;
-    public GameObject doneButton;
+    public Button doneButton;
     private bool debugMode = false;
     public Text fps;
     public Text operatingSystem;
@@ -18,37 +18,59 @@ public class UIController : MonoBehaviour
 
     private Vector3 originalEulers;
     private Vector3 transformEulers;
-    private int remainingFrames;
-    public int timeInFrames = 100;
+
+    public int colorWheelAnimationDuration = 100;
     public GameObject debugInfos;
-    private bool refocusAnimation = false;
+    private bool colorWheelAnimation = false;
+    private bool colorWheelOut = false;
+    public GameObject colorWheel;
 
     public int selectedState = 0;
 
+    public Button paint;
+    public Button build;
+    public Button delete;
+    public Button redo;
+    public Button color;
+    public GameObject leftUI;
+    public GameObject bottomUI;
+
+    public Image pickedColor;
+
+    public Color selectedColor;
+
+    private float dpiScaler;
 
     // Start is called before the first frame update
     void Start()
     {
+        selectedColor = pickedColor.GetComponent<Image>().color;
+
+        doneButton.interactable = false;
+        redo.interactable = false;
+
         operatingSystem.text = SystemInfo.operatingSystem;
-        
 
+        build.interactable = false;
+        delete.interactable = true;
+        paint.interactable = true;
 
-        Debug.Log("dc: " + Display.displays.Length + " ss: " + Input.stylusTouchSupported + " ts: " + Input.touchSupported);
-        // Display.displays[0] is the primary, default display and is always ON.
-        // Check if additional displays are available and activate each.
-        monitor.text = " Displays: " + Display.displays.Length + " " + Input.stylusTouchSupported + " " + Input.touchSupported + " " + Input.touchCount;
-        
+        scaleUIWithDpi();
+
+        monitor.text = "DPs: " + Display.displays.Length + " Res: " + Screen.currentResolution + " TS: " + Input.touchSupported + " TC: " + Input.touchCount + " DPI: " + Screen.dpi + " SaveArea: " + Screen.safeArea;
     }
 
     // Update is called once per frame
     void Update()
     {
+        
+
         if (debugMode)
         {
             if (debugInfos.activeSelf)
             {
                 fps.text = (int)(1.0 / Time.smoothDeltaTime) + " FPS";
-                monitor.text = Display.displays[Display.displays.Length - 1].ToString() + " Number: " + Display.displays.Length + " " + Input.stylusTouchSupported + " " + Input.touchSupported + " " + Input.touchCount;
+                monitor.text = "DPs: " + Display.displays.Length + " Res: " + Screen.currentResolution + " TS: " + Input.touchSupported + " TC: " + Input.touchCount + " DPI: " + Screen.dpi + " SaveArea: " + Screen.safeArea;
             }
             else
             {
@@ -59,19 +81,11 @@ public class UIController : MonoBehaviour
         {
             debugInfos.SetActive(false);
         }
-        if (refocusAnimation)
+        if (colorWheelAnimation)
         {
-            if (remainingFrames > 0)
-            {
-                voxelModel.transform.eulerAngles += transformEulers;
-                remainingFrames--;
-            }
-            else
-            {
-                refocusAnimation = false;
-                remainingFrames = timeInFrames;
-            }
+            colorWheelAnimate();
         }
+
     }
     public void editDone()
     {
@@ -103,7 +117,7 @@ public class UIController : MonoBehaviour
 
 
             //combinedMesh.transform.gameObject.SetActive(true);
-            doneButton.SetActive(false);
+            doneButton.enabled = false;
 
 
 
@@ -201,7 +215,7 @@ public class UIController : MonoBehaviour
     }
 
 
-
+    /*
     public void ResetRotation()
     {
         if (!refocusAnimation)
@@ -210,11 +224,113 @@ public class UIController : MonoBehaviour
             refocusAnimation = true;
         }
 
-    }
+    }*/
 
     public void setSelectedState(int state)
     {
         selectedState = state;
+        switch (state)
+        {
+            case 0:
+                build.interactable = false;
+                delete.interactable = true;
+                paint.interactable = true;
+                break;
+            case 1:
+                build.interactable = true;
+                delete.interactable = false;
+                paint.interactable = true;
+                break;
+            case 2:
+                build.interactable = true;
+                delete.interactable = true;
+                paint.interactable = false;
+                break;
+        }
     }
+    public void setSelectedColor(Button button)
+    {
+        selectedColor = button.GetComponent<Image>().color;
+        button.GetComponent<Image>().color = pickedColor.color;
+        pickedColor.color = selectedColor;
+        colorWheel.SetActive(true);
+        colorWheelAnimation = true;
+    }
+    private void colorWheelAnimate()
+    {
+        if (colorWheelOut)
+        {
+            float scaler = (1f + dpiScaler) / colorWheelAnimationDuration;
+            if (!(colorWheel.transform.localScale.x <= 0))
+            {
+                colorWheel.transform.localScale = new Vector3(colorWheel.transform.localScale.x - scaler, colorWheel.transform.localScale.y - scaler, 1);
+            }
+            else
+            {
+                colorWheel.transform.localScale = new Vector3(0, 0, 1);
+                colorWheel.SetActive(false);
+                colorWheelAnimation = false;
+                colorWheelOut = false;
+            }
+        }
+        else
+        {
+            float scaler = (1f+dpiScaler) / colorWheelAnimationDuration;
+            if (!(colorWheel.transform.localScale.x >= 1))
+            {
+                colorWheel.transform.localScale = new Vector3(colorWheel.transform.localScale.x + scaler, colorWheel.transform.localScale.y + scaler, 1);
+            }
+            else
+            {
+                colorWheel.transform.localScale = new Vector3(1+dpiScaler, 1+ dpiScaler, 1);
+                colorWheelAnimation = false;
+                colorWheelOut = true;
+            }
+        }
+    }
+    public void toggleColorWheel()
+    {
+        if (colorWheel.activeInHierarchy)
+        {
+            colorWheelAnimation = true;
+        }
+        else
+        {
+            colorWheel.SetActive(true);
+            colorWheelAnimation = true;
+        }
+        
+    }
+    private void scaleUIWithDpi()
+    {
+        int longSide;
+        if(Screen.currentResolution.width > Screen.currentResolution.height)
+        {
+            longSide = Screen.currentResolution.width;
+        }
+        else
+        {
+            longSide = Screen.currentResolution.height;
+        }
+        if(longSide/ Screen.dpi < 6)//Mobilephone
+        {
+            dpiScaler = Screen.dpi / 1800f;
+        }else if(longSide / Screen.dpi < 12)
+        {
+            dpiScaler = Screen.dpi / 2200f;
+        }else if(longSide / Screen.dpi > 39)
+        {
+            dpiScaler = -Screen.dpi / 2200f;
+        }
+        else
+        {
+            dpiScaler = 0;
+        }
+        doneButton.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
+        color.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
+        leftUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
+        bottomUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
 
+        
+    }
 }
