@@ -15,6 +15,7 @@ public class UIController : MonoBehaviour
     public Text fps;
     public Text operatingSystem;
     public Text monitor;
+    public GameObject DebugCursor;
 
     private Vector3 originalEulers;
     private Vector3 transformEulers;
@@ -75,11 +76,13 @@ public class UIController : MonoBehaviour
             else
             {
                 debugInfos.SetActive(true);
+                //DebugCursor.SetActive(true);
             }
         }
         else if (debugInfos.activeSelf)
         {
             debugInfos.SetActive(false);
+            //DebugCursor.SetActive(false);
         }
         if (colorWheelAnimation)
         {
