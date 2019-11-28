@@ -14,7 +14,6 @@ public class SceneController : MonoBehaviour
     public GameObject voxel;
     public UIController UIController;
     public UndoRedo undoRedoScript;
-    public GameObject groundCollider;
 
 
     private static bool arMode = false;
@@ -320,7 +319,7 @@ public class SceneController : MonoBehaviour
 
                 bool endedTouch = false;
 
-                if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began)
+                if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
                 {
                     touched = true;
                     originPointerPosition = endPosition;
@@ -331,7 +330,7 @@ public class SceneController : MonoBehaviour
                 {
                     endedTouch = true;
                 }
-                if (possible)
+                if (possible && touched)
                 {
                     if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
                     {
@@ -390,14 +389,14 @@ public class SceneController : MonoBehaviour
 
             tileSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
 
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
             {
                 originPointerPosition = endPosition;
                 correctedOriginPointerPosition = newEndPosition;
                 startPosData = endPosData;
                 touched = true;
             }
-            if (possible)
+            if (possible && touched)
             {
                 if (Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0))
                 {
@@ -512,14 +511,14 @@ public class SceneController : MonoBehaviour
                 deleteSelector.transform.position = endPosition;
                 deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
 
-                if (Input.GetMouseButtonDown(0))
+                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
                 {
                     originPointerPosition = endPosition;
                     correctedOriginPointerPosition = newEndPosition;
                     startPosData = endPosData;
                     touched = true;
                 }
-                if (possible)
+                if (possible && touched)
                 {
                     if (Input.GetMouseButton(0))
                     {
@@ -587,7 +586,7 @@ public class SceneController : MonoBehaviour
 
                     bool endedTouch = false;
 
-                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began)
+                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
                     {
                         touched = true;
                         originPointerPosition = endPosition;
@@ -598,7 +597,7 @@ public class SceneController : MonoBehaviour
                     {
                         endedTouch = true;
                     }
-                    if (possible)
+                    if (possible && touched)
                     {
                         if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
                         {
@@ -706,14 +705,14 @@ public class SceneController : MonoBehaviour
                 deleteSelector.transform.position = endPosition;
                 deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
 
-                if (Input.GetMouseButtonDown(0))
+                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
                 {
                     originPointerPosition = endPosition;
                     correctedOriginPointerPosition = newEndPosition;
                     startPosData = endPosData;
                     touched = true;
                 }
-                if (possible)
+                if (possible && touched)
                 {
                     if (Input.GetMouseButton(0))
                     {
@@ -778,7 +777,7 @@ public class SceneController : MonoBehaviour
                     deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
 
                     bool endedTouch = false;
-                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began)
+                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
                     {
                         touched = true;
                         originPointerPosition = endPosition;
@@ -790,7 +789,7 @@ public class SceneController : MonoBehaviour
                         endedTouch = true;
                     }
 
-                    if (possible)
+                    if (possible && touched)
                     {
                         if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
                         {

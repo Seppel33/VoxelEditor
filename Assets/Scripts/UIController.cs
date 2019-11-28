@@ -32,16 +32,18 @@ public class UIController : MonoBehaviour
     public Button build;
     public Button delete;
     public Button redo;
-    public Button color;
+    public GameObject color;
     public GameObject leftUI;
     public GameObject bottomUI;
+    public FlexibleColorPicker fcp;
 
     public Image pickedColor;
 
     public Color selectedColor;
 
     private float dpiScaler;
-
+    private float clickTime;
+    private bool lastColorSelected = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -84,11 +86,33 @@ public class UIController : MonoBehaviour
             debugInfos.SetActive(false);
             //DebugCursor.SetActive(false);
         }
+
         if (colorWheelAnimation)
         {
             colorWheelAnimate();
         }
-
+        if (SceneController.activeTouchControl)
+        {
+            if(Input.GetTouch(0).phase == TouchPhase.Began)
+            {
+                clickTime = Time.time;
+            }
+            else if(Input.GetTouch(0).phase == TouchPhase.Ended)
+            {
+                clickTime = 0;
+            }
+        }
+        else
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                clickTime = Time.time;
+            }
+            else if (Input.GetMouseButtonUp(0))
+            {
+                clickTime = 0;
+            }
+        }
     }
     public void editDone()
     {
@@ -253,11 +277,28 @@ public class UIController : MonoBehaviour
     }
     public void setSelectedColor(Button button)
     {
-        selectedColor = button.GetComponent<Image>().color;
-        button.GetComponent<Image>().color = pickedColor.color;
-        pickedColor.color = selectedColor;
-        colorWheel.SetActive(true);
-        colorWheelAnimation = true;
+        if (button.transform.GetSiblingIndex() == 5)
+        {
+            if (!lastColorSelected)
+            {
+                clickTime -= 0.8f;
+            }
+        }
+        if(Time.time- clickTime < 0.5f)
+        {
+            selectedColor = button.GetComponent<Image>().color;
+            button.GetComponent<Image>().color = pickedColor.color;
+            pickedColor.color = selectedColor;
+            colorWheel.SetActive(true);
+            colorWheelAnimation = true;
+        }
+        else
+        {
+            fcp.startingColor = button.GetComponent<Image>().color;
+            fcp.gameObject.SetActive(true);
+            fcp.color = button.GetComponent<Image>().color;
+        }
+
     }
     private void colorWheelAnimate()
     {
@@ -293,6 +334,7 @@ public class UIController : MonoBehaviour
     }
     public void toggleColorWheel()
     {
+        fcp.gameObject.SetActive(false);
         if (colorWheel.activeInHierarchy)
         {
             colorWheelAnimation = true;
