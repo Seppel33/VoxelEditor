@@ -83,43 +83,62 @@ public class SceneController : MonoBehaviour
         }
         else
         {
-            if (activeTouchControl)
+            if (!UIController.getActiveColorSelector())
             {
-                if (Input.touchCount > 1)
+                if (activeTouchControl)
                 {
-                    moveGesture = true;
+                    if (Input.touchCount > 1)
+                    {
+                        moveGesture = true;
 
+                    }
+                    else if (Input.touchCount == 0)
+                    {
+                        moveGesture = false;
+                    }
+                    switch (UIController.selectedState)
+                    {
+                        case 0:
+                            touchBuildControl();
+                            break;
+                        case 1:
+                            touchDeleteControl();
+                            break;
+                        case 2:
+                            touchPaintControl();
+                            break;
+                    }
                 }
-                else if (Input.touchCount == 0)
+                else
                 {
-                    moveGesture = false;
+                    switch (UIController.selectedState)
+                    {
+                        case 0:
+                            standardBuildControl();
+                            break;
+                        case 1:
+                            standardDeleteControl();
+                            break;
+                        case 2:
+                            standardPaintControl();
+                            break;
+                    }
                 }
-                switch (UIController.selectedState)
-                {
-                    case 0:
-                        touchBuildControl();
-                        break;
-                    case 1:
-                        touchDeleteControl();
-                        break;
-                    case 2:
-                        touchPaintControl();
-                        break;
-                }
-            }
-            else
+            } else if (Input.GetMouseButton(0) || Input.GetMouseButton(1) || (Input.touchCount == 1 && Input.GetTouch(0).phase != TouchPhase.Ended))
             {
-                switch (UIController.selectedState)
+                if (activeTouchControl)
                 {
-                    case 0:
-                        standardBuildControl();
-                        break;
-                    case 1:
-                        standardDeleteControl();
-                        break;
-                    case 2:
-                        standardPaintControl();
-                        break;
+                    if(!EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
+                    {
+                        UIController.closeColorWheel(null);
+                    }
+                }
+                else
+                {
+                    if(!EventSystem.current.IsPointerOverGameObject())
+                    {
+                        UIController.closeColorWheel(null);
+                    }
                 }
             }
 
@@ -184,16 +203,17 @@ public class SceneController : MonoBehaviour
     {
         endPosData = new int[3];
         Vector3 output = endPosition;
-        if(state == 0)
+        switch (state)
         {
-            tileSelector.SetActive(false);
-        }
-        else if(state == 1){
-            deleteSelector.SetActive(false);
-        }
-        else
-        {
-            deleteSelector.SetActive(false);
+            case 0:
+                tileSelector.SetActive(false);
+                break;
+            case 1:
+                deleteSelector.SetActive(false);
+                break;
+            case 2:
+                deleteSelector.SetActive(false);
+                break;
         }
         int count = 0;
         if (output.x < -dimensions.x / 2)
@@ -243,32 +263,32 @@ public class SceneController : MonoBehaviour
         }
         if (touched && checkIfPossible(endPosData, endPosition, output))
         {
-            if (state == 0)
+            switch (state)
             {
-                tileSelector.SetActive(true);
-            }
-            else if (state == 1)
-            {
-                deleteSelector.SetActive(true);
-            }
-            else
-            {
-                deleteSelector.SetActive(true);
+                case 0:
+                    tileSelector.SetActive(true);
+                    break;
+                case 1:
+                    deleteSelector.SetActive(true);
+                    break;
+                case 2:
+                    deleteSelector.SetActive(true);
+                    break;
             }
         }
         else if(count == 3)
         {
-            if (state == 0)
+            switch (state)
             {
-                tileSelector.SetActive(true);
-            }
-            else if (state == 1)
-            {
-                deleteSelector.SetActive(true);
-            }
-            else
-            {
-                deleteSelector.SetActive(true);
+                case 0:
+                    tileSelector.SetActive(true);
+                    break;
+                case 1:
+                    deleteSelector.SetActive(true);
+                    break;
+                case 2:
+                    deleteSelector.SetActive(true);
+                    break;
             }
         }
         return output;
@@ -365,6 +385,7 @@ public class SceneController : MonoBehaviour
         else
         {
             tileSelector.SetActive(false);
+            touched = false;
         }
     }
     private void standardBuildControl()
@@ -640,6 +661,7 @@ public class SceneController : MonoBehaviour
         else
         {
             deleteSelector.SetActive(false);
+            touched = false;
         }
     }
 
@@ -793,9 +815,9 @@ public class SceneController : MonoBehaviour
                     {
                         if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
                         {
-                            Vector3 difference = endPosition - originPointerPosition;
+                            Vector3 difference = newEndPosition - correctedOriginPointerPosition;
                             deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
-                            deleteSelector.transform.position = originPointerPosition + difference / 2;
+                            deleteSelector.transform.position = correctedOriginPointerPosition + difference / 2;
 
                             /*
                             int children = deleteSelector.transform.GetChild(0).transform.childCount;
@@ -810,7 +832,7 @@ public class SceneController : MonoBehaviour
                         }
                         else if (endedTouch)
                         {
-                            paintSelected(endPosition);
+                            paintSelected(newEndPosition);
                             touched = false;
                         }
                     }
@@ -833,6 +855,7 @@ public class SceneController : MonoBehaviour
         else
         {
             deleteSelector.SetActive(false);
+            touched = false;
         }
     }
     private void paintSelected(Vector3 endPosition)

@@ -49,6 +49,8 @@ public class FlexibleColorPicker : MonoBehaviour {
     private const float HUE_LOOP = 5.9999f;
     public bool staticMode = false;
 
+    private Button comesFromButton;
+
 
 
     /*----------------------------------------------------------
@@ -416,7 +418,10 @@ public class FlexibleColorPicker : MonoBehaviour {
             if(!skipPickers || IsPreviewType(type))
                 UpdateTexture(type, staticMode);
         }
-
+        if(comesFromButton != null)
+        {
+            comesFromButton.GetComponent<Image>().color = color;
+        }
     }
 
     private void UpdateTexture(PickerType type, bool standardized) {
@@ -815,5 +820,13 @@ public class FlexibleColorPicker : MonoBehaviour {
             toReturn.a = this.color.a;
             return new BufferedColor(toReturn, bufferedHue, bufferedSaturation);
         }
+    }
+    public void setComesFromButton(Button b)
+    {
+        comesFromButton = b;
+    }
+    public Button getComesFromButton()
+    {
+        return comesFromButton;
     }
 }

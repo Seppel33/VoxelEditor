@@ -42,7 +42,6 @@ public class CameraController : MonoBehaviour
 
     private void rotateTransformedHandler(object sender, System.EventArgs e)
     {
-        Debug.Log("DeltaP: " + RotateGesture.DeltaPosition);
         transform.parent.transform.Rotate(0, RotateGesture.DeltaPosition.x * touchSenitivity, 0, Space.World);
         transform.parent.transform.Rotate(-RotateGesture.DeltaPosition.y * touchSenitivity, 0, 0, Space.Self);
         DirectionalLight.transform.Rotate(0, RotateGesture.DeltaPosition.x * touchSenitivity, 0, Space.World);

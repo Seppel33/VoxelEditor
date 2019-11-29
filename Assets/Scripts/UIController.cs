@@ -16,6 +16,7 @@ public class UIController : MonoBehaviour
     public Text operatingSystem;
     public Text monitor;
     public GameObject DebugCursor;
+    public Sprite colorImage;
 
     private Vector3 originalEulers;
     private Vector3 transformEulers;
@@ -28,14 +29,16 @@ public class UIController : MonoBehaviour
 
     public int selectedState = 0;
 
-    public Button paint;
-    public Button build;
-    public Button delete;
-    public Button redo;
+    public Button paintButton;
+    public Button buildButton;
+    public Button deleteButton;
+    public Button redoButton;
     public GameObject color;
     public GameObject leftUI;
     public GameObject bottomUI;
     public FlexibleColorPicker fcp;
+    public UndoRedo undoRedo;
+    public Button colorSelect;
 
     public Image pickedColor;
 
@@ -44,19 +47,20 @@ public class UIController : MonoBehaviour
     private float dpiScaler;
     private float clickTime;
     private bool lastColorSelected = false;
+    private bool activeColorSelector;
     // Start is called before the first frame update
     void Start()
     {
         selectedColor = pickedColor.GetComponent<Image>().color;
 
         doneButton.interactable = false;
-        redo.interactable = false;
+        redoButton.interactable = false;
 
         operatingSystem.text = SystemInfo.operatingSystem;
 
-        build.interactable = false;
-        delete.interactable = true;
-        paint.interactable = true;
+        buildButton.interactable = false;
+        deleteButton.interactable = true;
+        paintButton.interactable = true;
 
         scaleUIWithDpi();
 
@@ -66,8 +70,6 @@ public class UIController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-
         if (debugMode)
         {
             if (debugInfos.activeSelf)
@@ -93,13 +95,16 @@ public class UIController : MonoBehaviour
         }
         if (SceneController.activeTouchControl)
         {
-            if(Input.GetTouch(0).phase == TouchPhase.Began)
+            if(Input.touchCount == 1)
             {
-                clickTime = Time.time;
-            }
-            else if(Input.GetTouch(0).phase == TouchPhase.Ended)
-            {
-                clickTime = 0;
+                if (Input.GetTouch(0).phase == TouchPhase.Began)
+                {
+                    clickTime = Time.time;
+                }
+                else if (Input.GetTouch(0).phase == TouchPhase.Ended)
+                {
+                    clickTime = 0;
+                }
             }
         }
         else
@@ -252,53 +257,69 @@ public class UIController : MonoBehaviour
         }
 
     }*/
-
+    public void undo()
+    {
+        closeColorWheel(null);
+        undoRedo.Undo();
+    }
+    public void redo()
+    {
+        closeColorWheel(null);
+        undoRedo.Redo();
+    }
     public void setSelectedState(int state)
     {
+        closeColorWheel(null);
         selectedState = state;
         switch (state)
         {
             case 0:
-                build.interactable = false;
-                delete.interactable = true;
-                paint.interactable = true;
+                buildButton.interactable = false;
+                deleteButton.interactable = true;
+                paintButton.interactable = true;
                 break;
             case 1:
-                build.interactable = true;
-                delete.interactable = false;
-                paint.interactable = true;
+                buildButton.interactable = true;
+                deleteButton.interactable = false;
+                paintButton.interactable = true;
                 break;
             case 2:
-                build.interactable = true;
-                delete.interactable = true;
-                paint.interactable = false;
+                buildButton.interactable = true;
+                deleteButton.interactable = true;
+                paintButton.interactable = false;
                 break;
         }
     }
-    public void setSelectedColor(Button button)
+    public void changeColor(Button button)
     {
+        Debug.Log("ButtonClick");
         if (button.transform.GetSiblingIndex() == 5)
         {
             if (!lastColorSelected)
             {
-                clickTime -= 0.8f;
+                clickTime -= 0.5f;
+                button.GetComponent<Image>().sprite = colorImage;
             }
         }
         if(Time.time- clickTime < 0.5f)
         {
-            selectedColor = button.GetComponent<Image>().color;
-            button.GetComponent<Image>().color = pickedColor.color;
-            pickedColor.color = selectedColor;
-            colorWheel.SetActive(true);
-            colorWheelAnimation = true;
+            closeColorWheel(button);
         }
         else
         {
-            fcp.startingColor = button.GetComponent<Image>().color;
+            fcp.setComesFromButton(button);
+            activeColorSelector = true;
+            Color buttonColor = button.GetComponent<Image>().color;
+            fcp.startingColor = buttonColor;
             fcp.gameObject.SetActive(true);
-            fcp.color = button.GetComponent<Image>().color;
+            fcp.color = buttonColor;
         }
-
+    }
+    private void setSelectedColor(Button button)
+    {
+        selectedColor = button.GetComponent<Image>().color;
+        button.GetComponent<Image>().color = pickedColor.color;
+        pickedColor.color = selectedColor;
     }
     private void colorWheelAnimate()
     {
@@ -334,17 +355,53 @@ public class UIController : MonoBehaviour
     }
     public void toggleColorWheel()
     {
-        fcp.gameObject.SetActive(false);
+        if (Time.time - clickTime < 0.5f)
+        {
+            if (!colorWheel.activeInHierarchy)
+            {
+                if (fcp.gameObject.activeInHierarchy)
+                {
+                    fcp.gameObject.SetActive(false);
+                    activeColorSelector = false;
+                }
+                colorWheel.SetActive(true);
+                colorWheelAnimation = true;
+            }
+            else
+            {
+                closeColorWheel(null);
+            }
+        }
+        else
+        {
+            fcp.setComesFromButton(colorSelect);
+            activeColorSelector = true;
+            Color buttonColor = colorSelect.GetComponent<Image>().color;
+            fcp.startingColor = buttonColor;
+            fcp.gameObject.SetActive(true);
+            fcp.color = buttonColor;
+            setSelectedColor(colorSelect);
+        }
+    }
+    public void closeColorWheel(Button b)
+    {
+        if (activeColorSelector)
+        {
+            setSelectedColor(fcp.getComesFromButton());
+            fcp.gameObject.SetActive(false);
+            activeColorSelector = false;
+        }
+        else
+        {
+            if (b != null)
+            {
+                setSelectedColor(b);
+            }
+        }
         if (colorWheel.activeInHierarchy)
         {
             colorWheelAnimation = true;
         }
-        else
-        {
-            colorWheel.SetActive(true);
-            colorWheelAnimation = true;
-        }
-        
     }
     private void scaleUIWithDpi()
     {
@@ -377,5 +434,9 @@ public class UIController : MonoBehaviour
         bottomUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
 
         
+    }
+    public bool getActiveColorSelector()
+    {
+        return activeColorSelector;
     }
 }
