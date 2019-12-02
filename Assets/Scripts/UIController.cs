@@ -39,6 +39,7 @@ public class UIController : MonoBehaviour
     public FlexibleColorPicker fcp;
     public UndoRedo undoRedo;
     public Button colorSelect;
+    public GameObject menu;
 
     public Image pickedColor;
 
@@ -48,6 +49,7 @@ public class UIController : MonoBehaviour
     private float clickTime;
     private bool lastColorSelected = false;
     private bool activeColorSelector;
+    private bool activeMenu;
     // Start is called before the first frame update
     void Start()
     {
@@ -438,5 +440,24 @@ public class UIController : MonoBehaviour
     public bool getActiveColorSelector()
     {
         return activeColorSelector;
+    }
+    public void toggleMenu()
+    {
+        closeColorWheel(null);
+        if (activeMenu)
+        {
+            menu.SetActive(false);
+            activeMenu = false;
+        }
+        else
+        {
+            menu.SetActive(true);
+            activeMenu = true;
+        }
+    }
+
+    public bool getActiveMenu()
+    {
+        return activeMenu;
     }
 }

@@ -83,7 +83,7 @@ public class SceneController : MonoBehaviour
         }
         else
         {
-            if (!UIController.getActiveColorSelector())
+            if (!UIController.getActiveColorSelector() && !UIController.getActiveMenu())
             {
                 if (activeTouchControl)
                 {
@@ -130,14 +130,29 @@ public class SceneController : MonoBehaviour
                 {
                     if(!EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
                     {
-                        UIController.closeColorWheel(null);
+                        if (UIController.getActiveMenu())
+                        {
+                            UIController.toggleMenu();
+                        }
+                        else
+                        {
+                            UIController.closeColorWheel(null);
+                        }
+                        
                     }
                 }
                 else
                 {
                     if(!EventSystem.current.IsPointerOverGameObject())
                     {
-                        UIController.closeColorWheel(null);
+                        if (UIController.getActiveMenu())
+                        {
+                            UIController.toggleMenu();
+                        }
+                        else
+                        {
+                            UIController.closeColorWheel(null);
+                        }
                     }
                 }
             }
