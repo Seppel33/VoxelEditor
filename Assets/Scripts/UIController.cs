@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEditor;
 using System.Linq;
+using System.IO;
 
 public class UIController : MonoBehaviour
 {
@@ -17,6 +18,7 @@ public class UIController : MonoBehaviour
     public Text monitor;
     public GameObject DebugCursor;
     public Sprite colorImage;
+    public GameObject voxel;
 
     private Vector3 originalEulers;
     private Vector3 transformEulers;
@@ -26,6 +28,7 @@ public class UIController : MonoBehaviour
     private bool colorWheelAnimation = false;
     private bool colorWheelOut = false;
     public GameObject colorWheel;
+    public SceneController sceneController;
 
     public int selectedState = 0;
 
@@ -50,6 +53,7 @@ public class UIController : MonoBehaviour
     private bool lastColorSelected = false;
     private bool activeColorSelector;
     private bool activeMenu;
+    private string currentDataName;
     // Start is called before the first frame update
     void Start()
     {
@@ -301,6 +305,7 @@ public class UIController : MonoBehaviour
             {
                 clickTime -= 0.5f;
                 button.GetComponent<Image>().sprite = colorImage;
+                lastColorSelected = true;
             }
         }
         if(Time.time- clickTime < 0.5f)
@@ -455,9 +460,113 @@ public class UIController : MonoBehaviour
             activeMenu = true;
         }
     }
-
     public bool getActiveMenu()
     {
         return activeMenu;
+    }
+    public void tryLoad(Button saveState)
+    {
+        string dataName = saveState.GetComponentInChildren<Text>().text;
+        string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
+
+        if(undoRedo.unsavedChanges)
+        {
+            currentDataName = dataName;
+            //display warning
+        }
+        else
+        {
+            if (File.Exists(path))
+            {
+                loadModel(dataName);
+            }
+        }
+    }
+ 
+    public void trySave(Button saveState)
+    {
+        string dataName = saveState.GetComponentInChildren<Text>().text;
+        string path = Application.persistentDataPath + "/models/" + dataName +".vx";
+
+        if (File.Exists(path))
+        {
+            currentDataName = dataName;
+            //display warning
+        }
+        else
+        {
+            saveModel(dataName);
+        }
+    }
+    private void saveModel(string dataName)
+    {
+        undoRedo.unsavedChanges = false;
+        SaveSystem.SaveEditableModel(dataName, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
+    }
+    private void loadModel(string dataName)
+    {
+        ModelData modelData = SaveSystem.LoadEditableModel(dataName);
+        if(modelData != null)
+        {
+            Vector3Int dimensions = new Vector3Int();
+            dimensions.x = modelData.dimensions[0];
+            dimensions.y = modelData.dimensions[1];
+            dimensions.z = modelData.dimensions[2];
+
+            sceneController.ClearGrid();
+            SceneController.dimensions = dimensions;
+            SceneController.gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
+            SceneController.timeTaken = modelData.timeTaken;
+            SceneController.actionsQuantity = modelData.actions;
+            sceneController.updateScene();
+
+            Renderer rend;
+            int count = 0;
+            for (int i = 0; i < modelData.dimensions[0]; i++)
+            {
+                for (int k = 0; k < modelData.dimensions[1]; k++)
+                {
+                    for (int h = 0; h < modelData.dimensions[2]; h++)
+                    {
+                        if (modelData.blockThere[count])
+                        {
+                            GameObject cube = Instantiate(voxel, new Vector3(i-dimensions.x/2, k, h - dimensions.z / 2), voxelModel.transform.rotation);
+                            cube.transform.parent = voxelModel.transform;
+                            rend = cube.transform.GetComponent<Renderer>();
+                            rend.material.shader = Shader.Find("Shader Graphs/Blocks");
+                            Color c = new Color(modelData.colors[0,count], modelData.colors[1, count], modelData.colors[2, count]);
+                            rend.material.SetColor("Color_E5F6C120", c);
+                            SceneController.gridOfObjects[i, k, h] = cube;
+                        }
+                        count++;
+                    }
+                }
+            }
+            undoRedo.resetList();
+        }
+    }
+    public void acceptLoad()
+    {
+        loadModel(currentDataName);
+        currentDataName = null;
+        closeChangeDiscardWarning();
+    }
+    public void closeChangeDiscardWarning()
+    {
+        //close discardWarning
+    }
+    public void acceptSaveOverride()
+    {
+        saveModel(currentDataName);
+        currentDataName = null;
+        closeSaveOverrideWarning();
+    }
+    public void closeSaveOverrideWarning()
+    {
+        //close discardWarning
+    }
+    public void displaySaveFiles()
+    {
+
     }
 }

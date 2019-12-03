@@ -31,6 +31,8 @@ public class SceneController : MonoBehaviour
     private Vector3Int dimension = new Vector3Int(15, 15, 15); //for inspector
     public static Vector3Int dimensions;
     public static GameObject[,,] gridOfObjects;
+    public static int actionsQuantity;
+    public static float timeTaken;
 
     private bool moveGesture = false;
 
@@ -60,13 +62,7 @@ public class SceneController : MonoBehaviour
         activeTouchControl = activeTouchControls;
         dimensions = dimension;
         gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
-
-
-        groundPlane.transform.localScale = new Vector3(dimensions.x / 10f, 1, dimensions.z / 10f);
-
-        rend = groundPlane.transform.GetComponent<Renderer>();
-        rend.material.shader = Shader.Find("Shader Graphs/Ground");
-        rend.material.SetVector("Vector2_3CDFD44B", new Vector4(dimensions.x,dimensions.z,0,0));
+        updateScene();
         
     }
 
@@ -124,6 +120,7 @@ public class SceneController : MonoBehaviour
                             break;
                     }
                 }
+                timeTaken += Time.deltaTime;
             } else if (Input.GetMouseButton(0) || Input.GetMouseButton(1) || (Input.touchCount == 1 && Input.GetTouch(0).phase != TouchPhase.Ended))
             {
                 if (activeTouchControl)
@@ -156,9 +153,20 @@ public class SceneController : MonoBehaviour
                     }
                 }
             }
-
+            else if(UIController.getActiveColorSelector())
+            {
+                timeTaken += Time.deltaTime;
+            }
         }
 
+    }
+    public void updateScene()
+    {
+        groundPlane.transform.localScale = new Vector3(dimensions.x / 10f, 1, dimensions.z / 10f);
+
+        rend = groundPlane.transform.GetComponent<Renderer>();
+        rend.material.shader = Shader.Find("Shader Graphs/Ground");
+        rend.material.SetVector("Vector2_3CDFD44B", new Vector4(dimensions.x, dimensions.z, 0, 0));
     }
     public static bool getArMode()
     {
@@ -181,6 +189,13 @@ public class SceneController : MonoBehaviour
             g.SetActive(false);
         }
         undoRedoScript.addAction(action);
+    }
+    public void ClearGrid()
+    {
+        foreach(Transform child in voxelModel.transform.GetComponentInChildren<Transform>())
+        {
+            Destroy(child.gameObject);
+        }
     }
     private Vector2[] calculateBounds(Vector3 endPosition)
     {
@@ -466,6 +481,7 @@ public class SceneController : MonoBehaviour
     }
     private void buildSelected(Vector3 endPosition)
     {
+        actionsQuantity++;
         Vector2[] bounds = calculateBounds(endPosition);
 
         ArrayList replacedCubes = new ArrayList();
@@ -489,7 +505,6 @@ public class SceneController : MonoBehaviour
 
                     rend = cube.transform.GetComponent<Renderer>();
                     rend.material.shader = Shader.Find("Shader Graphs/Blocks");
-                    Color c = rend.material.GetColor("Color_E5F6C120");
                     rend.material.SetColor("Color_E5F6C120", UIController.selectedColor);
 
                     placedCubes.Add(cube);
@@ -875,6 +890,7 @@ public class SceneController : MonoBehaviour
     }
     private void paintSelected(Vector3 endPosition)
     {
+        actionsQuantity++;
         Vector2[] bounds = calculateBounds(endPosition);
 
         ArrayList paintedCubes = new ArrayList();

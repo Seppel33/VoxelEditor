@@ -10,6 +10,7 @@ public class UndoRedo : MonoBehaviour
     private int undoPosition = 0;
     public Button undoButton;
     public Button redoButton;
+    public bool unsavedChanges;
 
     public void Undo()
     {
@@ -156,6 +157,7 @@ public class UndoRedo : MonoBehaviour
             m_lastActions.RemoveAt(0);
         }
         increaseUndoPosition();
+        unsavedChanges = true;
         undoButton.interactable = true;
     }
 
@@ -187,6 +189,12 @@ public class UndoRedo : MonoBehaviour
             m_lastActions.RemoveAt(i);
         }
         redoButton.interactable = false;
+    }
+    public void resetList()
+    {
+        unsavedChanges = false;
+        undoPosition = 0;
+        m_lastActions = new List<ArrayList>();
     }
 
 }
