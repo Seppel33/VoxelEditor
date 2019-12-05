@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEditor;
 using System.Linq;
+using System.IO;
 
 public class UIController : MonoBehaviour
 {
@@ -16,6 +17,8 @@ public class UIController : MonoBehaviour
     public Text operatingSystem;
     public Text monitor;
     public GameObject DebugCursor;
+    public Sprite colorImage;
+    public GameObject voxel;
 
     private Vector3 originalEulers;
     private Vector3 transformEulers;
@@ -25,36 +28,45 @@ public class UIController : MonoBehaviour
     private bool colorWheelAnimation = false;
     private bool colorWheelOut = false;
     public GameObject colorWheel;
+    public SceneController sceneController;
 
     public int selectedState = 0;
 
-    public Button paint;
-    public Button build;
-    public Button delete;
-    public Button redo;
-    public Button color;
+    public Button paintButton;
+    public Button buildButton;
+    public Button deleteButton;
+    public Button redoButton;
+    public GameObject color;
     public GameObject leftUI;
     public GameObject bottomUI;
+    public FlexibleColorPicker fcp;
+    public UndoRedo undoRedo;
+    public Button colorSelect;
+    public GameObject menu;
 
     public Image pickedColor;
 
     public Color selectedColor;
 
     private float dpiScaler;
-
+    private float clickTime;
+    private bool lastColorSelected = false;
+    private bool activeColorSelector;
+    private bool activeMenu;
+    private string currentDataName;
     // Start is called before the first frame update
     void Start()
     {
         selectedColor = pickedColor.GetComponent<Image>().color;
 
         doneButton.interactable = false;
-        redo.interactable = false;
+        redoButton.interactable = false;
 
         operatingSystem.text = SystemInfo.operatingSystem;
 
-        build.interactable = false;
-        delete.interactable = true;
-        paint.interactable = true;
+        buildButton.interactable = false;
+        deleteButton.interactable = true;
+        paintButton.interactable = true;
 
         scaleUIWithDpi();
 
@@ -64,8 +76,6 @@ public class UIController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-
         if (debugMode)
         {
             if (debugInfos.activeSelf)
@@ -84,11 +94,36 @@ public class UIController : MonoBehaviour
             debugInfos.SetActive(false);
             //DebugCursor.SetActive(false);
         }
+
         if (colorWheelAnimation)
         {
             colorWheelAnimate();
         }
-
+        if (SceneController.activeTouchControl)
+        {
+            if(Input.touchCount == 1)
+            {
+                if (Input.GetTouch(0).phase == TouchPhase.Began)
+                {
+                    clickTime = Time.time;
+                }
+                else if (Input.GetTouch(0).phase == TouchPhase.Ended)
+                {
+                    clickTime = 0;
+                }
+            }
+        }
+        else
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                clickTime = Time.time;
+            }
+            else if (Input.GetMouseButtonUp(0))
+            {
+                clickTime = 0;
+            }
+        }
     }
     public void editDone()
     {
@@ -228,36 +263,70 @@ public class UIController : MonoBehaviour
         }
 
     }*/
-
+    public void undo()
+    {
+        closeColorWheel(null);
+        undoRedo.Undo();
+    }
+    public void redo()
+    {
+        closeColorWheel(null);
+        undoRedo.Redo();
+    }
     public void setSelectedState(int state)
     {
+        closeColorWheel(null);
         selectedState = state;
         switch (state)
         {
             case 0:
-                build.interactable = false;
-                delete.interactable = true;
-                paint.interactable = true;
+                buildButton.interactable = false;
+                deleteButton.interactable = true;
+                paintButton.interactable = true;
                 break;
             case 1:
-                build.interactable = true;
-                delete.interactable = false;
-                paint.interactable = true;
+                buildButton.interactable = true;
+                deleteButton.interactable = false;
+                paintButton.interactable = true;
                 break;
             case 2:
-                build.interactable = true;
-                delete.interactable = true;
-                paint.interactable = false;
+                buildButton.interactable = true;
+                deleteButton.interactable = true;
+                paintButton.interactable = false;
                 break;
         }
     }
-    public void setSelectedColor(Button button)
+    public void changeColor(Button button)
+    {
+        Debug.Log("ButtonClick");
+        if (button.transform.GetSiblingIndex() == 5)
+        {
+            if (!lastColorSelected)
+            {
+                clickTime -= 0.5f;
+                button.GetComponent<Image>().sprite = colorImage;
+                lastColorSelected = true;
+            }
+        }
+        if(Time.time- clickTime < 0.5f)
+        {
+            closeColorWheel(button);
+        }
+        else
+        {
+            fcp.setComesFromButton(button);
+            activeColorSelector = true;
+            Color buttonColor = button.GetComponent<Image>().color;
+            fcp.startingColor = buttonColor;
+            fcp.gameObject.SetActive(true);
+            fcp.color = buttonColor;
+        }
+    }
+    private void setSelectedColor(Button button)
     {
         selectedColor = button.GetComponent<Image>().color;
         button.GetComponent<Image>().color = pickedColor.color;
         pickedColor.color = selectedColor;
-        colorWheel.SetActive(true);
-        colorWheelAnimation = true;
     }
     private void colorWheelAnimate()
     {
@@ -293,16 +362,53 @@ public class UIController : MonoBehaviour
     }
     public void toggleColorWheel()
     {
+        if (Time.time - clickTime < 0.5f)
+        {
+            if (!colorWheel.activeInHierarchy)
+            {
+                if (fcp.gameObject.activeInHierarchy)
+                {
+                    fcp.gameObject.SetActive(false);
+                    activeColorSelector = false;
+                }
+                colorWheel.SetActive(true);
+                colorWheelAnimation = true;
+            }
+            else
+            {
+                closeColorWheel(null);
+            }
+        }
+        else
+        {
+            fcp.setComesFromButton(colorSelect);
+            activeColorSelector = true;
+            Color buttonColor = colorSelect.GetComponent<Image>().color;
+            fcp.startingColor = buttonColor;
+            fcp.gameObject.SetActive(true);
+            fcp.color = buttonColor;
+            setSelectedColor(colorSelect);
+        }
+    }
+    public void closeColorWheel(Button b)
+    {
+        if (activeColorSelector)
+        {
+            setSelectedColor(fcp.getComesFromButton());
+            fcp.gameObject.SetActive(false);
+            activeColorSelector = false;
+        }
+        else
+        {
+            if (b != null)
+            {
+                setSelectedColor(b);
+            }
+        }
         if (colorWheel.activeInHierarchy)
         {
             colorWheelAnimation = true;
         }
-        else
-        {
-            colorWheel.SetActive(true);
-            colorWheelAnimation = true;
-        }
-        
     }
     private void scaleUIWithDpi()
     {
@@ -335,5 +441,132 @@ public class UIController : MonoBehaviour
         bottomUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
 
         
+    }
+    public bool getActiveColorSelector()
+    {
+        return activeColorSelector;
+    }
+    public void toggleMenu()
+    {
+        closeColorWheel(null);
+        if (activeMenu)
+        {
+            menu.SetActive(false);
+            activeMenu = false;
+        }
+        else
+        {
+            menu.SetActive(true);
+            activeMenu = true;
+        }
+    }
+    public bool getActiveMenu()
+    {
+        return activeMenu;
+    }
+    public void tryLoad(Button saveState)
+    {
+        string dataName = saveState.GetComponentInChildren<Text>().text;
+        string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
+
+        if(undoRedo.unsavedChanges)
+        {
+            currentDataName = dataName;
+            //display warning
+        }
+        else
+        {
+            if (File.Exists(path))
+            {
+                loadModel(dataName);
+            }
+        }
+    }
+ 
+    public void trySave(Button saveState)
+    {
+        string dataName = saveState.GetComponentInChildren<Text>().text;
+        string path = Application.persistentDataPath + "/models/" + dataName +".vx";
+
+        if (File.Exists(path))
+        {
+            currentDataName = dataName;
+            //display warning
+        }
+        else
+        {
+            saveModel(dataName);
+        }
+    }
+    private void saveModel(string dataName)
+    {
+        undoRedo.unsavedChanges = false;
+        SaveSystem.SaveEditableModel(dataName, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
+    }
+    private void loadModel(string dataName)
+    {
+        ModelData modelData = SaveSystem.LoadEditableModel(dataName);
+        if(modelData != null)
+        {
+            Vector3Int dimensions = new Vector3Int();
+            dimensions.x = modelData.dimensions[0];
+            dimensions.y = modelData.dimensions[1];
+            dimensions.z = modelData.dimensions[2];
+
+            sceneController.ClearGrid();
+            SceneController.dimensions = dimensions;
+            SceneController.gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
+            SceneController.timeTaken = modelData.timeTaken;
+            SceneController.actionsQuantity = modelData.actions;
+            sceneController.updateScene();
+
+            Renderer rend;
+            int count = 0;
+            for (int i = 0; i < modelData.dimensions[0]; i++)
+            {
+                for (int k = 0; k < modelData.dimensions[1]; k++)
+                {
+                    for (int h = 0; h < modelData.dimensions[2]; h++)
+                    {
+                        if (modelData.blockThere[count])
+                        {
+                            GameObject cube = Instantiate(voxel, new Vector3(i-dimensions.x/2, k, h - dimensions.z / 2), voxelModel.transform.rotation);
+                            cube.transform.parent = voxelModel.transform;
+                            rend = cube.transform.GetComponent<Renderer>();
+                            rend.material.shader = Shader.Find("Shader Graphs/Blocks");
+                            Color c = new Color(modelData.colors[0,count], modelData.colors[1, count], modelData.colors[2, count]);
+                            rend.material.SetColor("Color_E5F6C120", c);
+                            SceneController.gridOfObjects[i, k, h] = cube;
+                        }
+                        count++;
+                    }
+                }
+            }
+            undoRedo.resetList();
+        }
+    }
+    public void acceptLoad()
+    {
+        loadModel(currentDataName);
+        currentDataName = null;
+        closeChangeDiscardWarning();
+    }
+    public void closeChangeDiscardWarning()
+    {
+        //close discardWarning
+    }
+    public void acceptSaveOverride()
+    {
+        saveModel(currentDataName);
+        currentDataName = null;
+        closeSaveOverrideWarning();
+    }
+    public void closeSaveOverrideWarning()
+    {
+        //close discardWarning
+    }
+    public void displaySaveFiles()
+    {
+
     }
 }
