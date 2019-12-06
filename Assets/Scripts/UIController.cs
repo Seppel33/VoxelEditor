@@ -630,7 +630,13 @@ public class UIController : MonoBehaviour
         int height = 105;
         string path = Application.persistentDataPath + "/models";
 
-        if(comingFrom == 1)
+        if (!Directory.Exists(path))
+        {
+            //if it doesn't, create it
+            Directory.CreateDirectory(path);
+        }
+
+        if (comingFrom == 1)
         {
             NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(true);
             NewSaveButtonGroup.transform.GetChild(1).transform.GetChild(1).GetComponent<InputField>().text = "";
