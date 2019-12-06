@@ -129,7 +129,7 @@ public class SceneController : MonoBehaviour
                     {
                         if (UIController.getActiveMenu())
                         {
-                            UIController.toggleMenu();
+                            //UIController.toggleMenu();
                         }
                         else
                         {
@@ -144,7 +144,7 @@ public class SceneController : MonoBehaviour
                     {
                         if (UIController.getActiveMenu())
                         {
-                            UIController.toggleMenu();
+                            //UIController.toggleMenu();
                         }
                         else
                         {

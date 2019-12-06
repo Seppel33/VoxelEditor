@@ -53,4 +53,8 @@ public static class SaveSystem
             return null;
         }
     }
+    public static void DeleteFile()
+    {
+
+    }
 }

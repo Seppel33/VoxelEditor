@@ -43,9 +43,15 @@ public class UIController : MonoBehaviour
     public UndoRedo undoRedo;
     public Button colorSelect;
     public GameObject menu;
+    public GameObject warningOverlayPanel;
+    public GameObject overrideWarning;
+    public GameObject unsavedChangesWarning;
+    public Button savestate;
+    public Button doneCustomSave;
+    public Animator menuAnimator;
+    public GameObject NewSaveButtonGroup;
 
     public Image pickedColor;
-
     public Color selectedColor;
 
     private float dpiScaler;
@@ -54,6 +60,7 @@ public class UIController : MonoBehaviour
     private bool activeColorSelector;
     private bool activeMenu;
     private string currentDataName;
+    private int comingFromSaveLoad;
     // Start is called before the first frame update
     void Start()
     {
@@ -155,7 +162,6 @@ public class UIController : MonoBehaviour
 
 
             //combinedMesh.transform.gameObject.SetActive(true);
-            doneButton.enabled = false;
 
 
 
@@ -435,7 +441,6 @@ public class UIController : MonoBehaviour
         {
             dpiScaler = 0;
         }
-        doneButton.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         color.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         leftUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         bottomUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
@@ -451,12 +456,13 @@ public class UIController : MonoBehaviour
         closeColorWheel(null);
         if (activeMenu)
         {
-            menu.SetActive(false);
+            menuAnimator.SetBool("activeSecondMenu", false);
+            menuAnimator.SetBool("activeMenu", false);
             activeMenu = false;
         }
         else
         {
-            menu.SetActive(true);
+            menuAnimator.SetBool("activeMenu", true);
             activeMenu = true;
         }
     }
@@ -464,7 +470,18 @@ public class UIController : MonoBehaviour
     {
         return activeMenu;
     }
-    public void tryLoad(Button saveState)
+    public void saveLoad(Button saveState)
+    {
+        if(comingFromSaveLoad == 0)
+        {
+            tryLoad(saveState);
+        }
+        else
+        {
+            trySave(saveState);
+        }
+    }
+    private void tryLoad(Button saveState)
     {
         string dataName = saveState.GetComponentInChildren<Text>().text;
         string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
@@ -472,7 +489,8 @@ public class UIController : MonoBehaviour
         if(undoRedo.unsavedChanges)
         {
             currentDataName = dataName;
-            //display warning
+            unsavedChangesWarning.SetActive(true);
+            warningOverlayPanel.SetActive(true);
         }
         else
         {
@@ -482,8 +500,7 @@ public class UIController : MonoBehaviour
             }
         }
     }
- 
-    public void trySave(Button saveState)
+    private void trySave(Button saveState)
     {
         string dataName = saveState.GetComponentInChildren<Text>().text;
         string path = Application.persistentDataPath + "/models/" + dataName +".vx";
@@ -491,20 +508,45 @@ public class UIController : MonoBehaviour
         if (File.Exists(path))
         {
             currentDataName = dataName;
-            //display warning
+            overrideWarning.SetActive(true);
+            warningOverlayPanel.SetActive(true);
         }
         else
         {
             saveModel(dataName);
         }
     }
+    public void saveUnderNew(InputField input)
+    {
+
+        string dataName = input.text;
+        string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
+
+        if (File.Exists(path))
+        {
+            currentDataName = dataName;
+            overrideWarning.SetActive(true);
+            warningOverlayPanel.SetActive(true);
+        }
+        else
+        {
+            saveModel(dataName);
+        }
+        input.text = "";
+        NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(true);
+        NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(false);
+    }
     private void saveModel(string dataName)
     {
+        menuAnimator.SetBool("activeSecondMenu", false);
+        menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         undoRedo.unsavedChanges = false;
         SaveSystem.SaveEditableModel(dataName, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
     }
     private void loadModel(string dataName)
     {
+        menuAnimator.SetBool("activeSecondMenu", false);
+        menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         ModelData modelData = SaveSystem.LoadEditableModel(dataName);
         if(modelData != null)
         {
@@ -545,28 +587,116 @@ public class UIController : MonoBehaviour
             undoRedo.resetList();
         }
     }
-    public void acceptLoad()
+    public void acceptLoad(bool response)
     {
-        loadModel(currentDataName);
+        if (response)
+        {
+            loadModel(currentDataName);
+        }
         currentDataName = null;
         closeChangeDiscardWarning();
     }
-    public void closeChangeDiscardWarning()
+    private void closeChangeDiscardWarning()
     {
-        //close discardWarning
+        menuAnimator.SetBool("activeSecondMenu", false);
+        menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
+        unsavedChangesWarning.SetActive(false);
+        warningOverlayPanel.SetActive(false);
     }
-    public void acceptSaveOverride()
+    public void acceptSaveOverride(bool response)
     {
-        saveModel(currentDataName);
+        if (response)
+        {
+            saveModel(currentDataName);
+        }
         currentDataName = null;
         closeSaveOverrideWarning();
     }
-    public void closeSaveOverrideWarning()
+    private void closeSaveOverrideWarning()
     {
-        //close discardWarning
+        menuAnimator.SetBool("activeSecondMenu", false);
+        menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
+        overrideWarning.SetActive(false);
+        warningOverlayPanel.SetActive(false);
     }
-    public void displaySaveFiles()
+    public void displaySaveFiles(int comingFrom)
     {
+        comingFromSaveLoad = comingFrom;
+        GameObject saveLoadMenu;
+        saveLoadMenu = menu.transform.GetChild(0).transform.GetChild(2).gameObject;
+        saveLoadMenu.SetActive(true);
 
+        int count = 0;
+        int height = 105;
+        string path = Application.persistentDataPath + "/models";
+
+        if(comingFrom == 1)
+        {
+            NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(true);
+            NewSaveButtonGroup.transform.GetChild(1).transform.GetChild(1).GetComponent<InputField>().text = "";
+            NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(false);
+            NewSaveButtonGroup.SetActive(true);
+            menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", true);
+            menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
+        }
+        else
+        {
+            NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(true);
+            NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(false);
+            NewSaveButtonGroup.SetActive(false);
+            menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", true);
+            menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
+            height = 0;
+        }
+        for(int i = 1; i< saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).transform.childCount; i++)
+        {
+            Destroy(saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).transform.GetChild(i).gameObject);
+        }
+
+        foreach (string file in System.IO.Directory.GetFiles(path))
+        {
+            height += 105;
+            
+            Button save = Instantiate(savestate) as Button;
+            save.transform.SetParent(saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).transform, false);
+            save.GetComponent<Button>().onClick.AddListener(delegate { saveLoad(save); });
+            save.GetComponentInChildren<Text>().text = Path.GetFileNameWithoutExtension(file);
+
+            saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+
+            count++;
+        }
+        menuAnimator.SetBool("activeSecondMenu", true);
+    }
+    public void decoyButton(Button b) //only during unfinished Menu
+    {
+        GameObject myEventSystem = GameObject.Find("EventSystem");
+        myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
+    }
+
+    public void displaySaveInputField()
+    {
+        NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(false);
+        NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(true);
+    }
+    public void checkForLengh(InputField input)
+    {
+        if(input.text.Length < 1)
+        {
+            doneButton.interactable = false;
+        }
+        else
+        {
+            doneButton.interactable = true;
+        }
+    }
+    public void closeSecondMenu()
+    {
+        NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(true);
+        NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(false);
+        NewSaveButtonGroup.SetActive(false);
+        menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
+        menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
+        menuAnimator.SetBool("activeSecondMenu", false);
     }
 }
