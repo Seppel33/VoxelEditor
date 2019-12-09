@@ -47,9 +47,10 @@ public class UIController : MonoBehaviour
     public GameObject overrideWarning;
     public GameObject unsavedChangesWarning;
     public Button savestate;
-    public Button doneCustomSave;
+    public Button menuButton;
     public Animator menuAnimator;
     public GameObject NewSaveButtonGroup;
+    public GameObject sizeSelectPopUp;
 
     public Image pickedColor;
     public Color selectedColor;
@@ -427,6 +428,7 @@ public class UIController : MonoBehaviour
         {
             longSide = Screen.currentResolution.height;
         }
+
         if(longSide/ Screen.dpi < 6)//Mobilephone
         {
             dpiScaler = Screen.dpi / 1800f;
@@ -441,11 +443,11 @@ public class UIController : MonoBehaviour
         {
             dpiScaler = 0;
         }
+
         color.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         leftUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         bottomUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
-
-        
+        menuButton.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
     }
     public bool getActiveColorSelector()
     {
@@ -490,6 +492,8 @@ public class UIController : MonoBehaviour
         {
             currentDataName = dataName;
             unsavedChangesWarning.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButtonNewScene").gameObject.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButton").gameObject.SetActive(false);
             warningOverlayPanel.SetActive(true);
         }
         else
@@ -587,12 +591,21 @@ public class UIController : MonoBehaviour
             undoRedo.resetList();
         }
     }
-    public void acceptLoad(bool response)
+    public void acceptDiscard(bool fromLoad)
     {
-        if (response)
+        if (fromLoad)
         {
             loadModel(currentDataName);
         }
+        else
+        {
+            sizeSelectPopUp.SetActive(true);
+        }
+        currentDataName = null;
+        closeChangeDiscardWarning();
+    }
+    public void declineDiscardWarning()
+    {
         currentDataName = null;
         closeChangeDiscardWarning();
     }
@@ -704,5 +717,70 @@ public class UIController : MonoBehaviour
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         menuAnimator.SetBool("activeSecondMenu", false);
+    }
+    public void newScene()
+    {
+        Vector3Int dimensions = new Vector3Int();
+        switch (sizeSelectPopUp.transform.Find("Dropdown").GetComponent<Dropdown>().value)
+        {
+            case 0:
+                dimensions = new Vector3Int(11, 11, 11);
+                break;
+            case 1:
+                dimensions = new Vector3Int(21, 21, 21);
+                break;
+            case 2:
+                dimensions = new Vector3Int(41, 41, 41);
+                break;
+            case 3:
+                try
+                {
+                    dimensions.x = int.Parse(sizeSelectPopUp.transform.Find("CustomInput").transform.GetChild(0).GetComponent<InputField>().text);
+                    dimensions.y = int.Parse(sizeSelectPopUp.transform.Find("CustomInput").transform.GetChild(1).GetComponent<InputField>().text);
+                    dimensions.z = int.Parse(sizeSelectPopUp.transform.Find("CustomInput").transform.GetChild(2).GetComponent<InputField>().text);
+                }
+                catch
+                {
+                    dimensions = new Vector3Int(21, 21, 21);
+                }
+                
+                break;
+        }
+        menuAnimator.SetBool("activeMenu", false);
+        sceneController.ClearGrid();
+        SceneController.dimensions = dimensions;
+        SceneController.gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
+        SceneController.timeTaken = 0;
+        SceneController.actionsQuantity = 0;
+        sceneController.updateScene();
+        sizeSelectPopUp.SetActive(false);
+        activeMenu = false;
+    }
+    public void tryNewScene()
+    {
+        closeSecondMenu();
+        if (undoRedo.unsavedChanges)
+        {
+            unsavedChangesWarning.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButtonNewScene").gameObject.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButton").gameObject.SetActive(false);
+            warningOverlayPanel.SetActive(true);
+        }
+        else
+        {
+            sizeSelectPopUp.SetActive(true);
+        }
+    }
+
+    public void showCustomSizeInput()
+    {
+        if(sizeSelectPopUp.transform.Find("Dropdown").GetComponent<Dropdown>().value == 3)
+        {
+            sizeSelectPopUp.transform.Find("CustomInput").gameObject.SetActive(true);
+        }
+        else
+        {
+            sizeSelectPopUp.transform.Find("CustomInput").gameObject.SetActive(false);
+        }
     }
 }
