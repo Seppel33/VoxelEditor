@@ -125,17 +125,20 @@ public class SceneController : MonoBehaviour
             {
                 if (activeTouchControl)
                 {
-                    if(!EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
+                    if (Input.touchCount == 1)//temporary
                     {
-                        if (UIController.getActiveMenu())
+                        if (!EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
                         {
-                            //UIController.toggleMenu();
+                            if (UIController.getActiveMenu())
+                            {
+                                //UIController.toggleMenu();
+                            }
+                            else
+                            {
+                                UIController.closeColorWheel(null);
+                            }
+
                         }
-                        else
-                        {
-                            UIController.closeColorWheel(null);
-                        }
-                        
                     }
                 }
                 else
@@ -890,7 +893,6 @@ public class SceneController : MonoBehaviour
     }
     private void paintSelected(Vector3 endPosition)
     {
-        actionsQuantity++;
         Vector2[] bounds = calculateBounds(endPosition);
 
         ArrayList paintedCubes = new ArrayList();

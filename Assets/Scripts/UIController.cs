@@ -448,6 +448,9 @@ public class UIController : MonoBehaviour
         leftUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         bottomUI.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         menuButton.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
+        overrideWarning.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
+        unsavedChangesWarning.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
+        sizeSelectPopUp.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
     }
     public bool getActiveColorSelector()
     {
@@ -492,8 +495,8 @@ public class UIController : MonoBehaviour
         {
             currentDataName = dataName;
             unsavedChangesWarning.SetActive(true);
-            unsavedChangesWarning.transform.Find("YesButtonNewScene").gameObject.SetActive(true);
-            unsavedChangesWarning.transform.Find("YesButton").gameObject.SetActive(false);
+            unsavedChangesWarning.transform.Find("YesButtonNewScene").gameObject.SetActive(false);
+            unsavedChangesWarning.transform.Find("YesButton").gameObject.SetActive(true);
             warningOverlayPanel.SetActive(true);
         }
         else
@@ -679,8 +682,14 @@ public class UIController : MonoBehaviour
             Button save = Instantiate(savestate) as Button;
             save.transform.SetParent(saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).transform, false);
             save.GetComponent<Button>().onClick.AddListener(delegate { saveLoad(save); });
-            save.GetComponentInChildren<Text>().text = Path.GetFileNameWithoutExtension(file);
-
+            save.transform.Find("Text").GetComponent<Text>().text = Path.GetFileNameWithoutExtension(file);
+            ModelData m = SaveSystem.LoadEditableModel(Path.GetFileNameWithoutExtension(file));
+            int points = (int)((m.actions - (m.timeTaken * 0.05f)) * 10);
+            if (points < 0)
+            {
+                points = 0;
+            }
+            save.transform.Find("PointsText").GetComponent<Text>().text = points + " Points";
             saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).GetComponent<RectTransform>().SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
 
             count++;
@@ -697,6 +706,9 @@ public class UIController : MonoBehaviour
     {
         NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(false);
         NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(true);
+        InputField inputField = NewSaveButtonGroup.transform.GetChild(1).GetComponentInChildren<InputField>();
+        inputField.Select();
+        inputField.ActivateInputField();
     }
     public void checkForLengh(InputField input)
     {
@@ -783,4 +795,5 @@ public class UIController : MonoBehaviour
             sizeSelectPopUp.transform.Find("CustomInput").gameObject.SetActive(false);
         }
     }
+
 }
