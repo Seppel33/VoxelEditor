@@ -76,7 +76,6 @@ namespace TouchScript.Devices.Display
                 // Mobiles / fullscreen
                 case RuntimePlatform.Android:
                 case RuntimePlatform.IPhonePlayer:
-                case RuntimePlatform.TizenPlayer:
                 case RuntimePlatform.WSAPlayerARM:
                 case RuntimePlatform.WSAPlayerX64:
                 case RuntimePlatform.WSAPlayerX86:
@@ -102,18 +101,13 @@ namespace TouchScript.Devices.Display
                     nativeResolution = new Vector2(res.width, res.height);
                     break;
                 // Probably TVs
-                case RuntimePlatform.SamsungTVPlayer:
                 case RuntimePlatform.Switch:
-                case RuntimePlatform.WiiU:
                 case RuntimePlatform.XboxOne:
                 case RuntimePlatform.tvOS:
                     // This has not been tested and is probably wrong.
                     if (getHighestResolution(out nativeResolution)) break;
                     res = Screen.currentResolution;
                     nativeResolution = new Vector2(res.width, res.height);
-                    break;
-                case RuntimePlatform.PSP2:
-                    nativeResolution = new Vector2(960, 544);
                     break;
                 default:
                     // This has not been tested and is probably wrong.
@@ -190,16 +184,13 @@ namespace TouchScript.Devices.Display
                 // Mobiles / fullscreen
                 case RuntimePlatform.Android:
                 case RuntimePlatform.IPhonePlayer:
-                case RuntimePlatform.TizenPlayer:
                 case RuntimePlatform.WSAPlayerARM:
                 case RuntimePlatform.WSAPlayerX64:
                 case RuntimePlatform.WSAPlayerX86:
                     // We just hope that mobiles report their DPI correctly
                     break;
                 // Probably TVs
-                case RuntimePlatform.SamsungTVPlayer:
                 case RuntimePlatform.Switch:
-                case RuntimePlatform.WiiU:
                 case RuntimePlatform.XboxOne:
                 case RuntimePlatform.tvOS:
                     // This has not been tested and is probably wrong.
@@ -215,9 +206,6 @@ namespace TouchScript.Devices.Display
                     {
                         nativeDPI = 40;
                     }
-                    break;
-                case RuntimePlatform.PSP2:
-                    nativeDPI = 220.68f;
                     break;
                 default:
                     // This has not been tested and is probably wrong.
