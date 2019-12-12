@@ -11,6 +11,7 @@ Shader "Custom/FCP_Gradient" {
 		Tags {"Queue" = "Transparent" "RenderType" = "Transparent" "IgnoreProjector" = "True"}
 
 		ZWrite Off
+		ZTest Always
 		Blend SrcAlpha OneMinusSrcAlpha
 
 		Pass {
