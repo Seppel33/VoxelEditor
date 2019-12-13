@@ -1,11 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using UnityEditor;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
@@ -62,9 +59,11 @@ public class UIController : MonoBehaviour
     private bool activeMenu;
     private string currentDataName;
     private int comingFromSaveLoad;
+    private VirtualKeyboard vk;
     // Start is called before the first frame update
     void Start()
     {
+        vk = new VirtualKeyboard();
         selectedColor = pickedColor.GetComponent<Image>().color;
 
         doneButton.interactable = false;
@@ -76,7 +75,7 @@ public class UIController : MonoBehaviour
         deleteButton.interactable = true;
         paintButton.interactable = true;
 
-        scaleUIWithDpi();
+        ScaleUIWithDpi();
 
         monitor.text = "DPs: " + Display.displays.Length + " Res: " + Screen.currentResolution + " TS: " + Input.touchSupported + " TC: " + Input.touchCount + " DPI: " + Screen.dpi + " SaveArea: " + Screen.safeArea;
     }
@@ -105,7 +104,7 @@ public class UIController : MonoBehaviour
 
         if (colorWheelAnimation)
         {
-            colorWheelAnimate();
+            ColorWheelAnimate();
         }
         if (SceneController.activeTouchControl)
         {
@@ -133,7 +132,17 @@ public class UIController : MonoBehaviour
             }
         }
     }
-    public void editDone()
+    private void OnApplicationQuit()
+    {
+        if (SceneController.activeTouchControl)
+        {
+            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            {
+                CloseKeyboard();
+            }
+        }
+    }
+    public void EditDone()
     {
         if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
         {
@@ -176,7 +185,7 @@ public class UIController : MonoBehaviour
         }
     }
 
-    private void opimizeMesh()
+    private void OpimizeMesh()
     {
         for(int i = 0; i<voxelModel.transform.childCount; i++)
         {
@@ -270,19 +279,19 @@ public class UIController : MonoBehaviour
         }
 
     }*/
-    public void undo()
+    public void Undo()
     {
-        closeColorWheel(null);
+        CloseColorWheel(null);
         undoRedo.Undo();
     }
-    public void redo()
+    public void Redo()
     {
-        closeColorWheel(null);
+        CloseColorWheel(null);
         undoRedo.Redo();
     }
-    public void setSelectedState(int state)
+    public void SetSelectedState(int state)
     {
-        closeColorWheel(null);
+        CloseColorWheel(null);
         selectedState = state;
         switch (state)
         {
@@ -303,7 +312,7 @@ public class UIController : MonoBehaviour
                 break;
         }
     }
-    public void changeColor(Button button)
+    public void ChangeColor(Button button)
     {
         Debug.Log("ButtonClick");
         if (button.transform.GetSiblingIndex() == 5)
@@ -317,7 +326,7 @@ public class UIController : MonoBehaviour
         }
         if(Time.time- clickTime < 0.5f)
         {
-            closeColorWheel(button);
+            CloseColorWheel(button);
         }
         else
         {
@@ -329,13 +338,13 @@ public class UIController : MonoBehaviour
             fcp.color = buttonColor;
         }
     }
-    private void setSelectedColor(Button button)
+    private void SetSelectedColor(Button button)
     {
         selectedColor = button.GetComponent<Image>().color;
         button.GetComponent<Image>().color = pickedColor.color;
         pickedColor.color = selectedColor;
     }
-    private void colorWheelAnimate()
+    private void ColorWheelAnimate()
     {
         if (colorWheelOut)
         {
@@ -367,7 +376,7 @@ public class UIController : MonoBehaviour
             }
         }
     }
-    public void toggleColorWheel()
+    public void ToggleColorWheel()
     {
         if (Time.time - clickTime < 0.5f)
         {
@@ -383,7 +392,7 @@ public class UIController : MonoBehaviour
             }
             else
             {
-                closeColorWheel(null);
+                CloseColorWheel(null);
             }
         }
         else
@@ -394,14 +403,14 @@ public class UIController : MonoBehaviour
             fcp.startingColor = buttonColor;
             fcp.gameObject.SetActive(true);
             fcp.color = buttonColor;
-            setSelectedColor(colorSelect);
+            SetSelectedColor(colorSelect);
         }
     }
-    public void closeColorWheel(Button b)
+    public void CloseColorWheel(Button b)
     {
         if (activeColorSelector)
         {
-            setSelectedColor(fcp.getComesFromButton());
+            SetSelectedColor(fcp.getComesFromButton());
             fcp.gameObject.SetActive(false);
             activeColorSelector = false;
         }
@@ -409,7 +418,7 @@ public class UIController : MonoBehaviour
         {
             if (b != null)
             {
-                setSelectedColor(b);
+                SetSelectedColor(b);
             }
         }
         if (colorWheel.activeInHierarchy)
@@ -417,7 +426,7 @@ public class UIController : MonoBehaviour
             colorWheelAnimation = true;
         }
     }
-    private void scaleUIWithDpi()
+    private void ScaleUIWithDpi()
     {
         int longSide;
         if(Screen.currentResolution.width > Screen.currentResolution.height)
@@ -452,13 +461,13 @@ public class UIController : MonoBehaviour
         unsavedChangesWarning.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
         sizeSelectPopUp.transform.localScale = new Vector3(1 + dpiScaler, 1 + dpiScaler, 1);
     }
-    public bool getActiveColorSelector()
+    public bool GetActiveColorSelector()
     {
         return activeColorSelector;
     }
-    public void toggleMenu()
+    public void ToggleMenu()
     {
-        closeColorWheel(null);
+        CloseColorWheel(null);
         if (activeMenu)
         {
             menuAnimator.SetBool("activeSecondMenu", false);
@@ -471,22 +480,22 @@ public class UIController : MonoBehaviour
             activeMenu = true;
         }
     }
-    public bool getActiveMenu()
+    public bool GetActiveMenu()
     {
         return activeMenu;
     }
-    public void saveLoad(Button saveState)
+    public void SaveLoad(Button saveState)
     {
         if(comingFromSaveLoad == 0)
         {
-            tryLoad(saveState);
+            TryLoad(saveState);
         }
         else
         {
-            trySave(saveState);
+            TrySave(saveState);
         }
     }
-    private void tryLoad(Button saveState)
+    private void TryLoad(Button saveState)
     {
         string dataName = saveState.GetComponentInChildren<Text>().text;
         string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
@@ -495,6 +504,7 @@ public class UIController : MonoBehaviour
         {
             currentDataName = dataName;
             unsavedChangesWarning.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButtonExit").gameObject.SetActive(false);
             unsavedChangesWarning.transform.Find("YesButtonNewScene").gameObject.SetActive(false);
             unsavedChangesWarning.transform.Find("YesButton").gameObject.SetActive(true);
             warningOverlayPanel.SetActive(true);
@@ -503,11 +513,11 @@ public class UIController : MonoBehaviour
         {
             if (File.Exists(path))
             {
-                loadModel(dataName);
+                LoadModel(dataName);
             }
         }
     }
-    private void trySave(Button saveState)
+    private void TrySave(Button saveState)
     {
         string dataName = saveState.GetComponentInChildren<Text>().text;
         string path = Application.persistentDataPath + "/models/" + dataName +".vx";
@@ -520,12 +530,19 @@ public class UIController : MonoBehaviour
         }
         else
         {
-            saveModel(dataName);
+            SaveModel(dataName);
         }
     }
-    public void saveUnderNew(InputField input)
+    public void SaveUnderNew(InputField input)
     {
 
+        if (SceneController.activeTouchControl)
+        {
+            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            {
+                CloseKeyboard();
+            }
+        }
         string dataName = input.text;
         string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
 
@@ -537,22 +554,22 @@ public class UIController : MonoBehaviour
         }
         else
         {
-            saveModel(dataName);
+            SaveModel(dataName);
         }
         input.text = "";
         NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(true);
         NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(false);
     }
-    private void saveModel(string dataName)
+    private void SaveModel(string dataName)
     {
         menuAnimator.SetBool("activeSecondMenu", false);
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         undoRedo.unsavedChanges = false;
         SaveSystem.SaveEditableModel(dataName, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
     }
-    private void loadModel(string dataName)
+    private void LoadModel(string dataName)
     {
-        menuAnimator.SetBool("activeSecondMenu", false);
+        ToggleMenu();
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         ModelData modelData = SaveSystem.LoadEditableModel(dataName);
         if(modelData != null)
@@ -594,48 +611,48 @@ public class UIController : MonoBehaviour
             undoRedo.resetList();
         }
     }
-    public void acceptDiscard(bool fromLoad)
+    public void AcceptDiscard(bool fromLoad)
     {
         if (fromLoad)
         {
-            loadModel(currentDataName);
+            LoadModel(currentDataName);
         }
         else
         {
             sizeSelectPopUp.SetActive(true);
         }
         currentDataName = null;
-        closeChangeDiscardWarning();
+        CloseChangeDiscardWarning();
     }
-    public void declineDiscardWarning()
+    public void DeclineDiscardWarning()
     {
         currentDataName = null;
-        closeChangeDiscardWarning();
+        CloseChangeDiscardWarning();
     }
-    private void closeChangeDiscardWarning()
+    private void CloseChangeDiscardWarning()
     {
         menuAnimator.SetBool("activeSecondMenu", false);
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("LoadButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         unsavedChangesWarning.SetActive(false);
         warningOverlayPanel.SetActive(false);
     }
-    public void acceptSaveOverride(bool response)
+    public void AcceptSaveOverride(bool response)
     {
         if (response)
         {
-            saveModel(currentDataName);
+            SaveModel(currentDataName);
         }
         currentDataName = null;
-        closeSaveOverrideWarning();
+        CloseSaveOverrideWarning();
     }
-    private void closeSaveOverrideWarning()
+    private void CloseSaveOverrideWarning()
     {
         menuAnimator.SetBool("activeSecondMenu", false);
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         overrideWarning.SetActive(false);
         warningOverlayPanel.SetActive(false);
     }
-    public void displaySaveFiles(int comingFrom)
+    public void DisplaySaveFiles(int comingFrom)
     {
         comingFromSaveLoad = comingFrom;
         GameObject saveLoadMenu;
@@ -681,7 +698,7 @@ public class UIController : MonoBehaviour
             
             Button save = Instantiate(savestate) as Button;
             save.transform.SetParent(saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).transform, false);
-            save.GetComponent<Button>().onClick.AddListener(delegate { saveLoad(save); });
+            save.GetComponent<Button>().onClick.AddListener(delegate { SaveLoad(save); });
             save.transform.Find("Text").GetComponent<Text>().text = Path.GetFileNameWithoutExtension(file);
             ModelData m = SaveSystem.LoadEditableModel(Path.GetFileNameWithoutExtension(file));
             int points = (int)((m.actions - (m.timeTaken * 0.05f)) * 10);
@@ -696,21 +713,30 @@ public class UIController : MonoBehaviour
         }
         menuAnimator.SetBool("activeSecondMenu", true);
     }
-    public void decoyButton(Button b) //only during unfinished Menu
+    public void DecoyButton(Button b) //only during unfinished Menu
     {
         GameObject myEventSystem = GameObject.Find("EventSystem");
         myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
     }
 
-    public void displaySaveInputField()
+    public void DisplaySaveInputField()
     {
+        
         NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(false);
         NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(true);
         InputField inputField = NewSaveButtonGroup.transform.GetChild(1).GetComponentInChildren<InputField>();
         inputField.Select();
         inputField.ActivateInputField();
+
+        if (SceneController.activeTouchControl)
+        {
+            if(Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            {
+                OpenKeyboard();
+            }
+        }
     }
-    public void checkForLengh(InputField input)
+    public void CheckForLengh(InputField input)
     {
         if(input.text.Length < 1)
         {
@@ -721,7 +747,7 @@ public class UIController : MonoBehaviour
             doneButton.interactable = true;
         }
     }
-    public void closeSecondMenu()
+    public void CloseSecondMenu()
     {
         NewSaveButtonGroup.transform.GetChild(0).gameObject.SetActive(true);
         NewSaveButtonGroup.transform.GetChild(1).gameObject.SetActive(false);
@@ -730,8 +756,15 @@ public class UIController : MonoBehaviour
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         menuAnimator.SetBool("activeSecondMenu", false);
     }
-    public void newScene()
+    public void NewScene()
     {
+        if (SceneController.activeTouchControl)
+        {
+            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+            {
+                CloseKeyboard();
+            }
+        }
         Vector3Int dimensions = new Vector3Int();
         switch (sizeSelectPopUp.transform.Find("Dropdown").GetComponent<Dropdown>().value)
         {
@@ -768,12 +801,13 @@ public class UIController : MonoBehaviour
         sizeSelectPopUp.SetActive(false);
         activeMenu = false;
     }
-    public void tryNewScene()
+    public void TryNewScene()
     {
-        closeSecondMenu();
+        CloseSecondMenu();
         if (undoRedo.unsavedChanges)
         {
             unsavedChangesWarning.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButtonExit").gameObject.SetActive(false);
             unsavedChangesWarning.transform.Find("YesButtonNewScene").gameObject.SetActive(true);
             unsavedChangesWarning.transform.Find("YesButton").gameObject.SetActive(false);
             warningOverlayPanel.SetActive(true);
@@ -784,16 +818,64 @@ public class UIController : MonoBehaviour
         }
     }
 
-    public void showCustomSizeInput()
+    public void ShowCustomSizeInput()
     {
         if(sizeSelectPopUp.transform.Find("Dropdown").GetComponent<Dropdown>().value == 3)
         {
             sizeSelectPopUp.transform.Find("CustomInput").gameObject.SetActive(true);
+            if (SceneController.activeTouchControl)
+            {
+                if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+                {
+                    OpenKeyboard();
+                }
+            }
         }
         else
         {
             sizeSelectPopUp.transform.Find("CustomInput").gameObject.SetActive(false);
+            if (SceneController.activeTouchControl)
+            {
+                if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
+                {
+                    CloseKeyboard();
+                }
+            }
         }
     }
 
+    public void ExitProgram()
+    {
+        Application.Quit();
+    }
+
+    public void TryExitProgram()
+    {
+        CloseSecondMenu();
+        if (undoRedo.unsavedChanges)
+        {
+            unsavedChangesWarning.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButtonExit").gameObject.SetActive(true);
+            unsavedChangesWarning.transform.Find("YesButtonNewScene").gameObject.SetActive(false);
+            unsavedChangesWarning.transform.Find("YesButton").gameObject.SetActive(false);
+            warningOverlayPanel.SetActive(true);
+        }
+        else
+        {
+            ExitProgram();
+        }
+    }
+    public void OpenKeyboard()
+    {
+        {
+            vk.ShowTouchKeyboard();
+        }
+    }
+
+    public void CloseKeyboard()
+    {
+        {
+            vk.HideTouchKeyboard();
+        }
+    }
 }
