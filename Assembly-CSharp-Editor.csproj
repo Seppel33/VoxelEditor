@@ -63,7 +63,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Editor\EditorObjExporter.cs" />
     <Compile Include="Assets\TouchScript\Editor\Behaviors\Cursors\CursorManagerEditor.cs" />
     <Compile Include="Assets\TouchScript\Editor\Behaviors\TransformerEditor.cs" />
     <Compile Include="Assets\TouchScript\Editor\Debugging\PointerDebuggerWindow.cs" />
