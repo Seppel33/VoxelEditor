@@ -14,6 +14,7 @@ public class SceneController : MonoBehaviour
     public GameObject voxel;
     public UIController UIController;
     public UndoRedo undoRedoScript;
+    public GameObject borderCollider;
 
 
     private static bool arMode = false;
@@ -79,7 +80,7 @@ public class SceneController : MonoBehaviour
         }
         else
         {
-            if (!UIController.getActiveColorSelector() && !UIController.getActiveMenu())
+            if (!UIController.GetActiveColorSelector() && !UIController.GetActiveMenu())
             {
                 if (activeTouchControl)
                 {
@@ -129,13 +130,13 @@ public class SceneController : MonoBehaviour
                     {
                         if (!EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
                         {
-                            if (UIController.getActiveMenu())
+                            if (UIController.GetActiveMenu())
                             {
                                 //UIController.toggleMenu();
                             }
                             else
                             {
-                                UIController.closeColorWheel(null);
+                                UIController.CloseColorWheel(null);
                             }
 
                         }
@@ -145,18 +146,18 @@ public class SceneController : MonoBehaviour
                 {
                     if(!EventSystem.current.IsPointerOverGameObject())
                     {
-                        if (UIController.getActiveMenu())
+                        if (UIController.GetActiveMenu())
                         {
                             //UIController.toggleMenu();
                         }
                         else
                         {
-                            UIController.closeColorWheel(null);
+                            UIController.CloseColorWheel(null);
                         }
                     }
                 }
             }
-            else if(UIController.getActiveColorSelector())
+            else if(UIController.GetActiveColorSelector())
             {
                 timeTaken += Time.deltaTime;
             }
@@ -166,6 +167,7 @@ public class SceneController : MonoBehaviour
     public void updateScene()
     {
         groundPlane.transform.localScale = new Vector3(dimensions.x / 10f, 1, dimensions.z / 10f);
+        borderCollider.transform.localScale = new Vector3(dimensions.x / 10f, dimensions.y / 10f, dimensions.z / 10f);
 
         rend = groundPlane.transform.GetComponent<Renderer>();
         rend.material.shader = Shader.Find("Shader Graphs/Ground");

@@ -43,7 +43,7 @@ public class CameraController : MonoBehaviour
 
     private void rotateTransformedHandler(object sender, System.EventArgs e)
     {
-        if (!UIController.getActiveMenu())
+        if (!UIController.GetActiveMenu())
         {
             transform.parent.transform.Rotate(0, RotateGesture.DeltaPosition.x * touchSenitivity, 0, Space.World);
             transform.parent.transform.Rotate(-RotateGesture.DeltaPosition.y * touchSenitivity, 0, 0, Space.Self);
@@ -54,7 +54,7 @@ public class CameraController : MonoBehaviour
 
     private void zoomTransformedHandler(object sender, System.EventArgs e)
     {
-        if (!UIController.getActiveMenu())
+        if (!UIController.GetActiveMenu())
         {
             if (((ZoomGesture.DeltaScale - 1f) < 0 && transform.localPosition.z > -100) || ((ZoomGesture.DeltaScale - 1f) > 0 && (transform.localPosition.z < -5)))
             {
@@ -65,7 +65,7 @@ public class CameraController : MonoBehaviour
 
     private void MouseControls()
     {
-        if (!UIController.getActiveMenu())
+        if (!UIController.GetActiveMenu())
         {
             if (Input.GetMouseButton(1))
             {
