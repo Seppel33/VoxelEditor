@@ -60,9 +60,11 @@ public class UIController : MonoBehaviour
     private string currentDataName;
     private int comingFromSaveLoad;
     private VirtualKeyboard vk;
+    public GameObject testCube;
     // Start is called before the first frame update
     void Start()
     {
+        
         vk = new VirtualKeyboard();
         selectedColor = pickedColor.GetComponent<Image>().color;
 
@@ -142,8 +144,10 @@ public class UIController : MonoBehaviour
             }
         }
     }
-    public void EditDone()
+    public void ExportModel(string name)
     {
+        ObjExporter.MeshToFile(testCube, Application.persistentDataPath + "/models/" + name + ".obj");
+        /*
         if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
         {
             //opimizeMesh();
@@ -182,7 +186,7 @@ public class UIController : MonoBehaviour
 
             //SceneManager.LoadScene("MainScene");
             
-        }
+        }*/
     }
 
     private void OpimizeMesh()
