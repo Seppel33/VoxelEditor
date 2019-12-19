@@ -4,7 +4,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 public static class SaveSystem
 {
-    public static void SaveEditableModel(string dataName, Vector3Int dimensions, int actionsQuantity, int timeTaken)
+    public static void SaveEditableModel(string path, Vector3Int dimensions, int actionsQuantity, int timeTaken)
     {
         try
         {
@@ -18,8 +18,6 @@ public static class SaveSystem
         {
             Debug.LogError(ex.Message);
         }
-
-        string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
 
         BinaryFormatter formatter = new BinaryFormatter();
 
@@ -55,6 +53,17 @@ public static class SaveSystem
     }
     public static void DeleteFile()
     {
-
+        
     }
+    public static string ImportModel(string path)
+    {
+        string name = Path.GetFileNameWithoutExtension(path);
+        if (!System.IO.Directory.Exists(Application.persistentDataPath + "/models"))
+        {
+            System.IO.Directory.CreateDirectory(Application.persistentDataPath + "/models");
+        }
+        System.IO.File.Copy(path, Application.persistentDataPath + "/models/" + name +".vx", true);
+        return name;
+    }
+
 }

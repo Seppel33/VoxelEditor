@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using SimpleFileBrowser;
 
 public class UIController : MonoBehaviour
 {
@@ -60,7 +61,6 @@ public class UIController : MonoBehaviour
     private string currentDataName;
     private int comingFromSaveLoad;
     private VirtualKeyboard vk;
-    public GameObject testCube;
     // Start is called before the first frame update
     void Start()
     {
@@ -141,128 +141,6 @@ public class UIController : MonoBehaviour
             if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
             {
                 CloseKeyboard();
-            }
-        }
-    }
-    public void ExportModel(string name)
-    {
-        ObjExporter.MeshToFile(testCube, Application.persistentDataPath + "/models/" + name + ".obj");
-        /*
-        if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
-        {
-            //opimizeMesh();
-
-            
-            MeshFilter[] meshFilters = voxelModel.GetComponentsInChildren<MeshFilter>();
-            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-
-            int i = 0;
-            while (i < meshFilters.Length)
-            {
-                combine[i].mesh = meshFilters[i].sharedMesh;
-                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
-                meshFilters[i].gameObject.SetActive(false);
-
-                i++;
-            }
-            //combinedMesh = PrefabUtility.SaveAsPrefabAssetAndConnect(combinedMesh, "Assets/CustomModels/CombinedMesh.prefab", InteractionMode.AutomatedAction);
-            MeshFilter mFilter = combinedMesh.AddComponent<MeshFilter>(); ;
-            mFilter.sharedMesh = new Mesh();
-            mFilter.sharedMesh.CombineMeshes(combine, true);
-            mFilter.sharedMesh.RecalculateBounds();
-            mFilter.sharedMesh.RecalculateNormals();
-            mFilter.sharedMesh.Optimize();
-
-
-
-            //combinedMesh.transform.gameObject.SetActive(true);
-
-
-
-            MeshFilter m = (MeshFilter)Instantiate(combinedMesh.transform.GetComponent<MeshFilter>());
-            //AssetDatabase.CreateAsset(m.mesh, "Assets/CustomModels/MyMesh.asset");
-            //AssetDatabase.SaveAssets();
-            combinedMesh.transform.GetComponent<MeshFilter>().mesh = m.mesh;
-
-            //SceneManager.LoadScene("MainScene");
-            
-        }*/
-    }
-
-    private void OpimizeMesh()
-    {
-        for(int i = 0; i<voxelModel.transform.childCount; i++)
-        {
-            bool[] neighbor = new bool[6];
-            int neighbors = 0;
-
-            Vector3Int objPos = new Vector3Int((int)voxelModel.transform.GetChild(i).transform.position.x, (int)voxelModel.transform.GetChild(i).transform.position.y, (int)voxelModel.transform.GetChild(i).transform.position.z);
-            if (objPos.y < SceneController.dimensions.y)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y+1, objPos.z+ SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[0] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.y > 0)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y-1, objPos.z + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[1] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.x < SceneController.dimensions.x/2)
-            {
-                if (SceneController.gridOfObjects[objPos.x+1+ SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[2] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.x > -SceneController.dimensions.x / 2)
-            {
-                if (SceneController.gridOfObjects[objPos.x-1+ SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[3] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.z < SceneController.dimensions.z / 2)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y, objPos.z+1 + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[4] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.z > -SceneController.dimensions.z / 2)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y, objPos.z-1 + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[5] = true;
-                    neighbors++;
-                }
-            }
-            if (neighbors == 6)
-            {
-                Destroy(voxelModel.transform.GetChild(i));
-            }
-            else if(neighbors > 0)
-            {
-                Mesh mesh = voxelModel.transform.GetChild(i).transform.GetComponent<MeshFilter>().mesh;
-                int[] oldTriangles = mesh.triangles;
-                int[] newTriangles = new int[mesh.triangles.Length - neighbors*2*3];
-
-                HashSet<int> indices = new HashSet<int>(mesh.triangles.AsEnumerable().Distinct().Where(index =>
-                mesh.normals[index] == Vector3.up
-                ).ToList());
-                int counter = 0;
-                foreach (int h in indices)
-                {
-                    newTriangles[counter++] = h;
-                }
             }
         }
     }
@@ -502,9 +380,12 @@ public class UIController : MonoBehaviour
     private void TryLoad(Button saveState)
     {
         string dataName = saveState.GetComponentInChildren<Text>().text;
+        CheckLoad(dataName);
+    }
+    private void CheckLoad(string dataName)
+    {
         string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
-
-        if(undoRedo.unsavedChanges)
+        if (undoRedo.unsavedChanges)
         {
             currentDataName = dataName;
             unsavedChangesWarning.SetActive(true);
@@ -569,7 +450,7 @@ public class UIController : MonoBehaviour
         menuAnimator.SetBool("activeSecondMenu", false);
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         undoRedo.unsavedChanges = false;
-        SaveSystem.SaveEditableModel(dataName, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
+        SaveSystem.SaveEditableModel(Application.persistentDataPath + "/models/" + dataName + ".vx", SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
     }
     private void LoadModel(string dataName)
     {
@@ -880,6 +761,159 @@ public class UIController : MonoBehaviour
     {
         {
             vk.HideTouchKeyboard();
+        }
+    }
+    public void ShowImportWindow()
+    {
+        string initialPath = "";
+        FileBrowser.SetFilters(false, new FileBrowser.Filter("", ".vx"));
+        FileBrowser.SetDefaultFilter(".vx");
+        FileBrowser.ShowLoadDialog((path) => ImportModel(path), null, false, initialPath, "Import", "Open");
+    }
+    private void ImportModel(string path)
+    {
+        CheckLoad(SaveSystem.ImportModel(path));
+    }
+    public void ShowExportWindow()
+    {
+        string initialPath = "";
+        FileBrowser.SetFilters(false, new FileBrowser.Filter("", ".vx"), new FileBrowser.Filter("", ".obj"));
+        FileBrowser.SetDefaultFilter(".vx");
+        FileBrowser.ShowSaveDialog((path) => ExportModel(path), null, false, initialPath, "Export", "Create");
+    }
+    private void ExportModel(string path)
+    {
+        string extension = Path.GetExtension(path);
+        if (extension.Equals(".vx"))
+        {
+            SaveSystem.SaveEditableModel(path, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
+        }
+        else
+        {
+            ExportModelToObj(path);
+        }
+    }
+    public void ExportModelToObj(string path)
+    {
+        //ObjExporter.MeshToFile(voxelModel, path);
+
+        /*
+        if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
+        {
+            //opimizeMesh();
+
+            
+            MeshFilter[] meshFilters = voxelModel.GetComponentsInChildren<MeshFilter>();
+            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
+
+            int i = 0;
+            while (i < meshFilters.Length)
+            {
+                combine[i].mesh = meshFilters[i].sharedMesh;
+                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
+                meshFilters[i].gameObject.SetActive(false);
+
+                i++;
+            }
+            //combinedMesh = PrefabUtility.SaveAsPrefabAssetAndConnect(combinedMesh, "Assets/CustomModels/CombinedMesh.prefab", InteractionMode.AutomatedAction);
+            MeshFilter mFilter = combinedMesh.AddComponent<MeshFilter>(); ;
+            mFilter.sharedMesh = new Mesh();
+            mFilter.sharedMesh.CombineMeshes(combine, true);
+            mFilter.sharedMesh.RecalculateBounds();
+            mFilter.sharedMesh.RecalculateNormals();
+            mFilter.sharedMesh.Optimize();
+
+
+
+            //combinedMesh.transform.gameObject.SetActive(true);
+
+
+
+            MeshFilter m = (MeshFilter)Instantiate(combinedMesh.transform.GetComponent<MeshFilter>());
+            //AssetDatabase.CreateAsset(m.mesh, "Assets/CustomModels/MyMesh.asset");
+            //AssetDatabase.SaveAssets();
+            combinedMesh.transform.GetComponent<MeshFilter>().mesh = m.mesh;
+
+            //SceneManager.LoadScene("MainScene");
+            
+        }*/
+    }
+
+    private void OpimizeMesh()
+    {
+        for (int i = 0; i < voxelModel.transform.childCount; i++)
+        {
+            bool[] neighbor = new bool[6];
+            int neighbors = 0;
+
+            Vector3Int objPos = new Vector3Int((int)voxelModel.transform.GetChild(i).transform.position.x, (int)voxelModel.transform.GetChild(i).transform.position.y, (int)voxelModel.transform.GetChild(i).transform.position.z);
+            if (objPos.y < SceneController.dimensions.y)
+            {
+                if (SceneController.gridOfObjects[objPos.x + SceneController.dimensions.x / 2, objPos.y + 1, objPos.z + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[0] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.y > 0)
+            {
+                if (SceneController.gridOfObjects[objPos.x + SceneController.dimensions.x / 2, objPos.y - 1, objPos.z + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[1] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.x < SceneController.dimensions.x / 2)
+            {
+                if (SceneController.gridOfObjects[objPos.x + 1 + SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[2] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.x > -SceneController.dimensions.x / 2)
+            {
+                if (SceneController.gridOfObjects[objPos.x - 1 + SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[3] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.z < SceneController.dimensions.z / 2)
+            {
+                if (SceneController.gridOfObjects[objPos.x + SceneController.dimensions.x / 2, objPos.y, objPos.z + 1 + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[4] = true;
+                    neighbors++;
+                }
+            }
+            if (objPos.z > -SceneController.dimensions.z / 2)
+            {
+                if (SceneController.gridOfObjects[objPos.x + SceneController.dimensions.x / 2, objPos.y, objPos.z - 1 + SceneController.dimensions.y / 2] != null)
+                {
+                    neighbor[5] = true;
+                    neighbors++;
+                }
+            }
+            if (neighbors == 6)
+            {
+                Destroy(voxelModel.transform.GetChild(i));
+            }
+            else if (neighbors > 0)
+            {
+                Mesh mesh = voxelModel.transform.GetChild(i).transform.GetComponent<MeshFilter>().mesh;
+                int[] oldTriangles = mesh.triangles;
+                int[] newTriangles = new int[mesh.triangles.Length - neighbors * 2 * 3];
+
+                HashSet<int> indices = new HashSet<int>(mesh.triangles.AsEnumerable().Distinct().Where(index =>
+                mesh.normals[index] == Vector3.up
+                ).ToList());
+                int counter = 0;
+                foreach (int h in indices)
+                {
+                    newTriangles[counter++] = h;
+                }
+            }
         }
     }
 }
