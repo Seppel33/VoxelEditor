@@ -68,6 +68,7 @@
     <Compile Include="Assets\FlexibleColorPicker\Scripts\FlexibleColorPicker.cs" />
     <Compile Include="Assets\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\KeepOnLoad.cs" />
+    <Compile Include="Assets\Scripts\MeshHandler.cs" />
     <Compile Include="Assets\Scripts\ModelData.cs" />
     <Compile Include="Assets\Scripts\ObjExporter.cs" />
     <Compile Include="Assets\Scripts\SaveSystem.cs" />
