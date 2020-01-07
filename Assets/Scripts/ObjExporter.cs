@@ -5,13 +5,14 @@ using System.Text;
 public class ObjExporter
 {
 
-    private static string MeshToString(MeshFilter mf, Renderer rend)
+    private static string MeshToString(MeshFilter mf, Renderer rend, string filename)
     {
         Mesh m = mf.mesh;
         Material[] mats = rend.sharedMaterials;
 
         StringBuilder sb = new StringBuilder();
 
+        sb.Append("mtllib ").Append(Path.ChangeExtension(filename, ".mtl")).Append("\n");
         sb.Append("g ").Append(mf.name).Append("\n");
         foreach (Vector3 v in m.vertices)
         {
@@ -30,8 +31,8 @@ public class ObjExporter
         for (int material = 0; material < m.subMeshCount; material++)
         {
             sb.Append("\n");
-            sb.Append("usemtl ").Append(mats[material].name).Append("\n");
-            sb.Append("usemap ").Append(mats[material].name).Append("\n");
+            sb.Append("usemtl ").Append(ColorUtility.ToHtmlStringRGB(mats[material].color)).Append("\n");
+            sb.Append("usemap ").Append(ColorUtility.ToHtmlStringRGB(mats[material].color)).Append("\n");
 
             int[] triangles = m.GetTriangles(material);
             for (int i = 0; i < triangles.Length; i += 3)
@@ -42,13 +43,35 @@ public class ObjExporter
         }
         return sb.ToString();
     }
+    private static string MaterialsToString(Renderer rend)
+    {
+        Material[] mats = rend.materials;
+
+        StringBuilder sb = new StringBuilder();
+
+        foreach(Material mat in mats)
+        {
+            sb.Append("newmtl ").Append(ColorUtility.ToHtmlStringRGB(mat.color)).Append("\n");
+            sb.Append("Ka").Append(mat.color.ToString().Replace(",", ".")).Append("\n");
+            sb.Append("Kd 0.0000 1.0000 0.0000").Append("\n");
+            sb.Append("illum 1").Append("\n").Append("\n");
+        }
+        
+
+        return sb.ToString();
+    }
 
     public static void MeshToFile(GameObject objectToExport, string filename)
     {
         
         using (StreamWriter sw = new StreamWriter(filename))
         {
-            sw.Write(MeshToString(objectToExport.GetComponent<MeshFilter>(), objectToExport.GetComponent<Renderer>()));
+            sw.Write(MeshToString(objectToExport.GetComponent<MeshFilter>(), objectToExport.GetComponent<Renderer>(), filename));
+        }
+        filename = Path.ChangeExtension(filename, ".mtl");
+        using (StreamWriter sw = new StreamWriter(filename))
+        {
+            sw.Write(MaterialsToString(objectToExport.GetComponent<Renderer>()));
         }
     }
 }

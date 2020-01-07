@@ -800,8 +800,8 @@ public class UIController : MonoBehaviour
         {
             GameObject fullMeshObject = meshHandler.OptimizeMesh(voxelModel);
             meshHandler.AsignStandardMaterials(fullMeshObject);
-            meshHandler.CombineMeshes(fullMeshObject);
-            ObjExporter.MeshToFile(fullMeshObject, path);
+            if(meshHandler.CombineMeshes(fullMeshObject))
+                ObjExporter.MeshToFile(fullMeshObject, path);
         }
     }
 }
