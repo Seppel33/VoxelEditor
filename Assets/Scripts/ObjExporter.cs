@@ -52,7 +52,9 @@ public class ObjExporter
         foreach(Material mat in mats)
         {
             sb.Append("newmtl ").Append(ColorUtility.ToHtmlStringRGB(mat.color)).Append("\n");
-            sb.Append("Ka").Append(mat.color.ToString().Replace(",", ".")).Append("\n");
+            string color = mat.color.r + " " + mat.color.g + " " + mat.color.b;
+            color.Replace(",", ".");
+            sb.Append("Ka").Append(color).Append("\n");
             sb.Append("Kd 0.0000 1.0000 0.0000").Append("\n");
             sb.Append("illum 1").Append("\n").Append("\n");
         }
