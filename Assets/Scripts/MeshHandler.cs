@@ -2,18 +2,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MeshHandler : MonoBehaviour
+public class MeshHandler
 {
-    [SerializeField]
-    private Material standardMaterial;
-    public GameObject OptimizeMesh(GameObject voxelModel)
+    private GameObject model;
+    public bool PrepareMesh(ref GameObject fullMesh)
     {
-        for (int i = 0; i < voxelModel.transform.childCount; i++)
+        OptimizeMesh();
+        AssignStandardMaterials();
+        bool b = CombineMeshes();
+        fullMesh = model;
+        return b;
+    }
+    private void OptimizeMesh()
+    {
+        for (int i = 0; i < model.transform.childCount; i++)
         {
             bool[] neighbor = new bool[6];
             int neighbors = 0;
 
-            Vector3Int objPos = new Vector3Int((int)voxelModel.transform.GetChild(i).transform.position.x, (int)voxelModel.transform.GetChild(i).transform.position.y, (int)voxelModel.transform.GetChild(i).transform.position.z);
+            Vector3Int objPos = new Vector3Int((int)model.transform.GetChild(i).transform.position.x, (int)model.transform.GetChild(i).transform.position.y, (int)model.transform.GetChild(i).transform.position.z);
             if (objPos.y < SceneController.dimensions.y)
             {
                 if (SceneController.gridOfObjects[objPos.x + SceneController.dimensions.x / 2, objPos.y + 1, objPos.z + SceneController.dimensions.y / 2] != null)
@@ -62,9 +69,9 @@ public class MeshHandler : MonoBehaviour
                     neighbors++;
                 }
             }
-            if (neighbors == 6)
+            if (neighbors == 7)
             {
-                Destroy(voxelModel.transform.GetChild(i));
+                model.transform.GetChild(i).gameObject.SetActive(false);
             }
             /*
             else if (neighbors > 0)
@@ -84,18 +91,18 @@ public class MeshHandler : MonoBehaviour
             }
             */
         }
-        return voxelModel;
     }
-    public void AsignStandardMaterials(GameObject model)
+    private void AssignStandardMaterials()
     {
-        foreach(MeshRenderer renderer in model.GetComponentsInChildren<MeshRenderer>())
+        Material standardMat = Resources.Load("Standard", typeof(Material)) as Material;
+        foreach (MeshRenderer renderer in model.GetComponentsInChildren<MeshRenderer>())
         {
             Color c= renderer.material.GetColor("Color_E5F6C120");
-            renderer.sharedMaterial = standardMaterial;
+            renderer.sharedMaterial = standardMat;
             renderer.material.SetColor("_BaseColor", c);
         }
     }
-    public bool CombineMeshes(GameObject model)
+    public bool CombineMeshes()
     {
         MeshFilter[] filters = model.GetComponentsInChildren<MeshFilter>(false);
 
@@ -160,20 +167,25 @@ public class MeshHandler : MonoBehaviour
         }
         Mesh finalMesh = new Mesh();
         finalMesh.CombineMeshes(finalCombiners.ToArray(), false);
-        if (finalMesh.vertexCount <= 64000)
+        if (finalMesh.vertexCount > 65000)
         {
-            model.AddComponent<MeshFilter>();
-            model.GetComponent<MeshFilter>().sharedMesh = finalMesh;
-            model.AddComponent<MeshRenderer>();
-            model.GetComponent<MeshRenderer>().materials = materials.ToArray();
-            Debug.Log("Final mesh has " + submeshes.Count + " materials");
-            return true;
-        }
-        else
-        {
-            Debug.LogError("Mesh has to many vertecies (" + finalMesh.vertexCount + ")");
+            Debug.LogError("Mesh hast over 65k vertecies");
             return false;
         }
-        
+        model.AddComponent<MeshFilter>();
+        model.GetComponent<MeshFilter>().sharedMesh = finalMesh;
+        model.AddComponent<MeshRenderer>();
+        model.GetComponent<MeshRenderer>().materials = materials.ToArray();
+        Debug.Log("Final mesh has " + submeshes.Count + " materials and " + finalMesh.vertexCount + " vertecies");
+        return true;
+    }
+    public void DestroyTempModel()
+    {
+        UnityEngine.Object.Destroy(model);
+    }
+    public GameObject CreateTempModel(GameObject voxelModel)
+    {
+        model = UnityEngine.Object.Instantiate(voxelModel);
+        return model;
     }
 }

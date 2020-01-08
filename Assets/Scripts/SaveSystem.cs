@@ -65,5 +65,39 @@ public static class SaveSystem
         System.IO.File.Copy(path, Application.persistentDataPath + "/models/" + name +".vx", true);
         return name;
     }
+    public static void ExportModelToObj(string path, GameObject voxelModel)
+    {
+        MeshHandler meshHandler = new MeshHandler();
+        if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
+        {
+            GameObject fullMeshObject = meshHandler.CreateTempModel(voxelModel);
+            if (meshHandler.PrepareMesh(ref fullMeshObject))
+                ObjExporter.MeshToFile(fullMeshObject, path);
+            meshHandler.DestroyTempModel();
+        }
+    }
+    public static Settings LoadSettings()
+    {
+        string path = Application.persistentDataPath + "/data/settings.bin";
 
+        if (File.Exists(path))
+        {
+            BinaryFormatter formatter = new BinaryFormatter();
+            FileStream stream = new FileStream(path, FileMode.Open);
+
+            Settings data = formatter.Deserialize(stream) as Settings;
+
+            stream.Close();
+            return data;
+        }
+        else
+        {
+            Debug.LogError("Save file not found in " + path);
+            return null;
+        }
+    }
+    public static void SaveSettings(Settings settings)
+    {
+
+    }
 }

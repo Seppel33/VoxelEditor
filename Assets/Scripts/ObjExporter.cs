@@ -31,8 +31,8 @@ public class ObjExporter
         for (int material = 0; material < m.subMeshCount; material++)
         {
             sb.Append("\n");
-            sb.Append("usemtl ").Append(ColorUtility.ToHtmlStringRGB(mats[material].color)).Append("\n");
-            sb.Append("usemap ").Append(ColorUtility.ToHtmlStringRGB(mats[material].color)).Append("\n");
+            sb.Append("usemtl ").Append(ColorUtility.ToHtmlStringRGB(mats[material].GetColor("_BaseColor"))).Append("\n");
+            sb.Append("usemap ").Append(ColorUtility.ToHtmlStringRGB(mats[material].GetColor("_BaseColor"))).Append("\n");
 
             int[] triangles = m.GetTriangles(material);
             for (int i = 0; i < triangles.Length; i += 3)
@@ -51,11 +51,11 @@ public class ObjExporter
 
         foreach(Material mat in mats)
         {
-            sb.Append("newmtl ").Append(ColorUtility.ToHtmlStringRGB(mat.color)).Append("\n");
-            string color = mat.color.r + " " + mat.color.g + " " + mat.color.b;
-            color.Replace(",", ".");
-            sb.Append("Ka").Append(color).Append("\n");
-            sb.Append("Kd 0.0000 1.0000 0.0000").Append("\n");
+            Color c = mat.GetColor("_BaseColor");
+            sb.Append("newmtl ").Append(ColorUtility.ToHtmlStringRGB(c)).Append("\n");
+            string color = (c.r + " " + c.g + " " + c.b).Replace(",", ".");
+            sb.Append("Ka ").Append(color).Append("\n");
+            sb.Append("Kd ").Append(color).Append("\n");
             sb.Append("illum 1").Append("\n").Append("\n");
         }
         

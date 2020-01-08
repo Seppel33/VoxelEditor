@@ -61,7 +61,6 @@ public class UIController : MonoBehaviour
     private string currentDataName;
     private int comingFromSaveLoad;
     private VirtualKeyboard vk;
-    public MeshHandler meshHandler;
     // Start is called before the first frame update
     void Start()
     {
@@ -791,17 +790,8 @@ public class UIController : MonoBehaviour
         }
         else
         {
-            ExportModelToObj(path);
+            SaveSystem.ExportModelToObj(path, voxelModel);
         }
     }
-    public void ExportModelToObj(string path)
-    {
-        if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
-        {
-            GameObject fullMeshObject = meshHandler.OptimizeMesh(voxelModel);
-            meshHandler.AsignStandardMaterials(fullMeshObject);
-            if(meshHandler.CombineMeshes(fullMeshObject))
-                ObjExporter.MeshToFile(fullMeshObject, path);
-        }
-    }
+    
 }
