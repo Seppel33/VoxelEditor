@@ -143,6 +143,7 @@ public class UIController : MonoBehaviour
                 CloseKeyboard();
             }
         }
+        SaveSystem.SaveSettings(SceneController.settings);
     }
 
     public void SetDebugMode(bool debugMode)
@@ -765,6 +766,7 @@ public class UIController : MonoBehaviour
     }
     public void ShowImportWindow()
     {
+        CloseSecondMenu();
         string initialPath = "";
         FileBrowser.SetFilters(false, new FileBrowser.Filter("", ".vx"));
         FileBrowser.SetDefaultFilter(".vx");
@@ -776,6 +778,7 @@ public class UIController : MonoBehaviour
     }
     public void ShowExportWindow()
     {
+        CloseSecondMenu();
         string initialPath = "";
         FileBrowser.SetFilters(false, new FileBrowser.Filter("", ".vx"), new FileBrowser.Filter("", ".obj"));
         FileBrowser.SetDefaultFilter(".vx");

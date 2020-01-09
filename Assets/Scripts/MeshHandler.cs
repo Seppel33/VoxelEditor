@@ -69,7 +69,7 @@ public class MeshHandler
                     neighbors++;
                 }
             }
-            if (neighbors == 7)
+            if (neighbors == 6)
             {
                 model.transform.GetChild(i).gameObject.SetActive(false);
             }

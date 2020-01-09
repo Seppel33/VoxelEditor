@@ -92,12 +92,61 @@ public static class SaveSystem
         }
         else
         {
-            Debug.LogError("Save file not found in " + path);
-            return null;
+            Settings settings = new Settings();
+            return settings;
         }
     }
     public static void SaveSettings(Settings settings)
     {
+        try
+        {
+            if (!Directory.Exists(Application.persistentDataPath + "/data"))
+            {
+                Directory.CreateDirectory(Application.persistentDataPath + "/data");
+            }
 
+        }
+        catch (IOException ex)
+        {
+            Debug.LogError(ex.Message);
+        }
+
+        string path = Application.persistentDataPath + "/data/settings.bin";
+
+        BinaryFormatter formatter = new BinaryFormatter();
+
+        FileStream stream = new FileStream(path, FileMode.Create);
+
+        formatter.Serialize(stream, settings);
+
+        Debug.Log("Settings saved under: " + path);
+        stream.Close();
+    }
+    public static void CreateExampleData()
+    {
+        TextAsset asset = Resources.Load<TextAsset>("ExampleHarvester");
+        Stream s = new MemoryStream(asset.bytes);
+        BinaryFormatter formatter = new BinaryFormatter();
+        ModelData modelData = formatter.Deserialize(s) as ModelData;
+
+
+        try
+        {
+            if (!Directory.Exists(Application.persistentDataPath + "/models"))
+            {
+                Directory.CreateDirectory(Application.persistentDataPath + "/models");
+            }
+
+        }
+        catch (IOException ex)
+        {
+            Debug.LogError(ex.Message);
+        }
+
+        FileStream stream = new FileStream(Application.persistentDataPath + "/models/ExampleHarvester.vx", FileMode.Create);
+
+        formatter.Serialize(stream, modelData);
+
+        stream.Close();
     }
 }
