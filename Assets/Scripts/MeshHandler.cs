@@ -21,7 +21,7 @@ public class MeshHandler
             int neighbors = 0;
 
             Vector3Int objPos = new Vector3Int((int)model.transform.GetChild(i).transform.position.x, (int)model.transform.GetChild(i).transform.position.y, (int)model.transform.GetChild(i).transform.position.z);
-            if (objPos.y < SceneController.dimensions.y)
+            if (objPos.y < SceneController.dimensions.y-1)
             {
                 if (SceneController.gridOfObjects[objPos.x + SceneController.dimensions.x / 2, objPos.y + 1, objPos.z + SceneController.dimensions.y / 2] != null)
                 {
@@ -73,23 +73,30 @@ public class MeshHandler
             {
                 model.transform.GetChild(i).gameObject.SetActive(false);
             }
-            /*
+            
             else if (neighbors > 0)
             {
-                Mesh mesh = voxelModel.transform.GetChild(i).transform.GetComponent<MeshFilter>().mesh;
+                /*
+                Mesh mesh = model.transform.GetChild(i).transform.GetComponent<MeshFilter>().mesh;
                 int[] oldTriangles = mesh.triangles;
-                int[] newTriangles = new int[mesh.triangles.Length - neighbors * 2 * 3];
-
-                HashSet<int> indices = new HashSet<int>(mesh.triangles.AsEnumerable().Distinct().Where(index =>
-                mesh.normals[index] == Vector3.up
-                ).ToList());
-                int counter = 0;
-                foreach (int h in indices)
+                int[] newTriangles = new int[(mesh.triangles.Length-neighbors*2*3)];
+                int j = 0;
+                int k = 0;
+                while (j < oldTriangles.Length-2)
                 {
-                    newTriangles[counter++] = h;
+                    Vector3 normal = mesh.normals[oldTriangles[j]];
+                    if ((normal == Vector3.up && neighbor[0])|| (normal == Vector3.down && neighbor[1])|| (normal == Vector3.right && neighbor[2])|| (normal == Vector3.left && neighbor[3])|| (normal == Vector3.forward && neighbor[4])|| (normal == Vector3.back && neighbor[5]))
+                    {
+                        newTriangles[k++] = oldTriangles[j];
+                        newTriangles[k++] = oldTriangles[j+1];
+                        newTriangles[k++] = oldTriangles[j+2];
+                    }
+                    j += 3;
                 }
+                mesh.triangles = newTriangles;
+                */
             }
-            */
+            
         }
     }
     private void AssignStandardMaterials()
@@ -167,7 +174,7 @@ public class MeshHandler
         }
         Mesh finalMesh = new Mesh();
         finalMesh.CombineMeshes(finalCombiners.ToArray(), false);
-        if (finalMesh.vertexCount > 65000)
+        if (finalMesh.vertexCount > 64000)
         {
             Debug.LogError("Mesh hast over 65k vertecies");
             return false;

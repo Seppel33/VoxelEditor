@@ -143,7 +143,6 @@ public class UIController : MonoBehaviour
                 CloseKeyboard();
             }
         }
-        SaveSystem.SaveSettings(SceneController.settings);
     }
 
     public void SetDebugMode(bool debugMode)

@@ -69,6 +69,7 @@ public class SceneController : MonoBehaviour
         {
             SaveSystem.CreateExampleData();
             settings.startedOnce = true;
+            SaveSystem.SaveSettings(settings);
         }
         updateScene();
         

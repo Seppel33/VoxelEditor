@@ -51,9 +51,9 @@ public static class SaveSystem
             return null;
         }
     }
-    public static void DeleteFile()
+    public static void DeleteFile(string name)
     {
-        
+        System.IO.File.Delete(Application.persistentDataPath + "/models/" + name + ".vx");
     }
     public static string ImportModel(string path)
     {
@@ -82,13 +82,22 @@ public static class SaveSystem
 
         if (File.Exists(path))
         {
-            BinaryFormatter formatter = new BinaryFormatter();
-            FileStream stream = new FileStream(path, FileMode.Open);
+            try
+            {
+                BinaryFormatter formatter = new BinaryFormatter();
+                FileStream stream = new FileStream(path, FileMode.Open);
 
-            Settings data = formatter.Deserialize(stream) as Settings;
+                Settings data = formatter.Deserialize(stream) as Settings;
 
-            stream.Close();
-            return data;
+                stream.Close();
+                return data;
+            }
+            catch
+            {
+                Debug.LogError("Settings could not be loaded");
+                Settings settings = new Settings();
+                return settings;
+            }
         }
         else
         {
