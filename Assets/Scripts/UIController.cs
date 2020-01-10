@@ -7,19 +7,14 @@ using SimpleFileBrowser;
 
 public class UIController : MonoBehaviour
 {
-    public GameObject combinedMesh;
     public GameObject voxelModel;
     public Button doneButton;
     private bool debugMode = false;
     public Text fps;
     public Text operatingSystem;
     public Text monitor;
-    public GameObject DebugCursor;
     public Sprite colorImage;
     public GameObject voxel;
-
-    private Vector3 originalEulers;
-    private Vector3 transformEulers;
 
     public int colorWheelAnimationDuration = 100;
     public GameObject debugInfos;
@@ -27,6 +22,7 @@ public class UIController : MonoBehaviour
     private bool colorWheelOut = false;
     public GameObject colorWheel;
     public SceneController sceneController;
+    public float longPressBias = 0.5f;
 
     public int selectedState = 0;
 
@@ -206,7 +202,7 @@ public class UIController : MonoBehaviour
                 lastColorSelected = true;
             }
         }
-        if(Time.time- clickTime < 0.5f)
+        if(Time.time- clickTime < longPressBias)
         {
             CloseColorWheel(button);
         }
@@ -260,7 +256,7 @@ public class UIController : MonoBehaviour
     }
     public void ToggleColorWheel()
     {
-        if (Time.time - clickTime < 0.5f)
+        if (Time.time - clickTime < longPressBias)
         {
             if (!colorWheel.activeInHierarchy)
             {
@@ -368,13 +364,20 @@ public class UIController : MonoBehaviour
     }
     public void SaveLoad(Button saveState)
     {
-        if(comingFromSaveLoad == 0)
+        if(Time.time-clickTime < longPressBias)
         {
-            TryLoad(saveState);
+            if (comingFromSaveLoad == 0)
+            {
+                TryLoad(saveState);
+            }
+            else
+            {
+                TrySave(saveState);
+            }
         }
         else
         {
-            TrySave(saveState);
+            //StartDeleteProcess(savestate);
         }
     }
     private void TryLoad(Button saveState)
@@ -795,5 +798,18 @@ public class UIController : MonoBehaviour
             SaveSystem.ExportModelToObj(path, voxelModel);
         }
     }
-    
+    private void StartDeleteProcess(Button clickedButton)
+    {
+        Button overlayButton = Instantiate(savestate) as Button;
+        overlayButton.transform.SetParent(menu.transform.GetChild(0).transform.GetChild(2).transform.GetChild(0).transform.GetChild(0).transform);
+        //overlayButton.GetComponent<Button>().onClick.AddListener(delegate { SaveLoad(save); });
+        overlayButton.transform.Find("Text").GetComponent<Text>().text = clickedButton.transform.Find("Text").GetComponent<Text>().text;
+        overlayButton.transform.Find("PointsText").GetComponent<Text>().text = clickedButton.transform.Find("PointsText").GetComponent<Text>().text;
+
+        clickedButton.transform.Find("Text").GetComponent<Text>().enabled = false;
+        clickedButton.transform.Find("PointsText").GetComponent<Text>().enabled = false;
+        Color color = overlayButton.GetComponent<Image>().color;
+        color.a = 1;
+        overlayButton.GetComponent<Image>().color = color;
+    }
 }

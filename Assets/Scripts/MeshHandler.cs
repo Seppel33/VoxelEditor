@@ -176,7 +176,7 @@ public class MeshHandler
         finalMesh.CombineMeshes(finalCombiners.ToArray(), false);
         if (finalMesh.vertexCount > 64000)
         {
-            Debug.LogError("Mesh hast over 65k vertecies");
+            Debug.LogError("Mesh hast over 64k vertecies");
             return false;
         }
         model.AddComponent<MeshFilter>();

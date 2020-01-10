@@ -10,6 +10,7 @@ public class ModelData
     public bool[] blockThere;
     public int actions;
     public int timeTaken;
+    public float[,] colorWheelColors;
     public ModelData(Vector3Int dimensions, int actions, int seconds)
     {
         this.actions = actions;
@@ -39,6 +40,11 @@ public class ModelData
                     count++;
                 }
             }
+        }
+        colorWheelColors = new float[3, 6];
+        for(int i = 1; i< 6; i++)
+        {
+            //colorWheelColors[i] = 
         }
     }
     
