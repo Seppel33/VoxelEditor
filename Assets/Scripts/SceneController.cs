@@ -44,6 +44,7 @@ public class SceneController : MonoBehaviour
     public bool activeTouchControls = false;
     public static bool activeTouchControl;
     private int touchCountEditorFix = 0;
+    public static Settings settings;
     // Start is called before the first frame update
     void Start()
     {
@@ -63,6 +64,13 @@ public class SceneController : MonoBehaviour
         activeTouchControl = activeTouchControls;
         dimensions = dimension;
         gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
+        settings = SaveSystem.LoadSettings();
+        if (!settings.startedOnce)
+        {
+            SaveSystem.CreateExampleData();
+            settings.startedOnce = true;
+            SaveSystem.SaveSettings(settings);
+        }
         updateScene();
         
     }

@@ -3,22 +3,18 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using SimpleFileBrowser;
 
 public class UIController : MonoBehaviour
 {
-    public GameObject combinedMesh;
     public GameObject voxelModel;
     public Button doneButton;
     private bool debugMode = false;
     public Text fps;
     public Text operatingSystem;
     public Text monitor;
-    public GameObject DebugCursor;
     public Sprite colorImage;
     public GameObject voxel;
-
-    private Vector3 originalEulers;
-    private Vector3 transformEulers;
 
     public int colorWheelAnimationDuration = 100;
     public GameObject debugInfos;
@@ -26,6 +22,7 @@ public class UIController : MonoBehaviour
     private bool colorWheelOut = false;
     public GameObject colorWheel;
     public SceneController sceneController;
+    public float longPressBias = 0.5f;
 
     public int selectedState = 0;
 
@@ -48,6 +45,7 @@ public class UIController : MonoBehaviour
     public Animator menuAnimator;
     public GameObject NewSaveButtonGroup;
     public GameObject sizeSelectPopUp;
+    public GameObject exportErrorPanel;
 
     public Image pickedColor;
     public Color selectedColor;
@@ -60,11 +58,10 @@ public class UIController : MonoBehaviour
     private string currentDataName;
     private int comingFromSaveLoad;
     private VirtualKeyboard vk;
-    public GameObject testCube;
+    private GameObject m_objectOnClick;
     // Start is called before the first frame update
     void Start()
     {
-        
         vk = new VirtualKeyboard();
         selectedColor = pickedColor.GetComponent<Image>().color;
 
@@ -81,7 +78,6 @@ public class UIController : MonoBehaviour
 
         monitor.text = "DPs: " + Display.displays.Length + " Res: " + Screen.currentResolution + " TS: " + Input.touchSupported + " TC: " + Input.touchCount + " DPI: " + Screen.dpi + " SaveArea: " + Screen.safeArea;
     }
-
     // Update is called once per frame
     void Update()
     {
@@ -95,13 +91,11 @@ public class UIController : MonoBehaviour
             else
             {
                 debugInfos.SetActive(true);
-                //DebugCursor.SetActive(true);
             }
         }
         else if (debugInfos.activeSelf)
         {
             debugInfos.SetActive(false);
-            //DebugCursor.SetActive(false);
         }
 
         if (colorWheelAnimation)
@@ -144,145 +138,10 @@ public class UIController : MonoBehaviour
             }
         }
     }
-    public void ExportModel(string name)
-    {
-        ObjExporter.MeshToFile(testCube, Application.persistentDataPath + "/models/" + name + ".obj");
-        /*
-        if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
-        {
-            //opimizeMesh();
-
-            
-            MeshFilter[] meshFilters = voxelModel.GetComponentsInChildren<MeshFilter>();
-            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-
-            int i = 0;
-            while (i < meshFilters.Length)
-            {
-                combine[i].mesh = meshFilters[i].sharedMesh;
-                combine[i].transform = meshFilters[i].transform.localToWorldMatrix;
-                meshFilters[i].gameObject.SetActive(false);
-
-                i++;
-            }
-            //combinedMesh = PrefabUtility.SaveAsPrefabAssetAndConnect(combinedMesh, "Assets/CustomModels/CombinedMesh.prefab", InteractionMode.AutomatedAction);
-            MeshFilter mFilter = combinedMesh.AddComponent<MeshFilter>(); ;
-            mFilter.sharedMesh = new Mesh();
-            mFilter.sharedMesh.CombineMeshes(combine, true);
-            mFilter.sharedMesh.RecalculateBounds();
-            mFilter.sharedMesh.RecalculateNormals();
-            mFilter.sharedMesh.Optimize();
-
-
-
-            //combinedMesh.transform.gameObject.SetActive(true);
-
-
-
-            MeshFilter m = (MeshFilter)Instantiate(combinedMesh.transform.GetComponent<MeshFilter>());
-            //AssetDatabase.CreateAsset(m.mesh, "Assets/CustomModels/MyMesh.asset");
-            //AssetDatabase.SaveAssets();
-            combinedMesh.transform.GetComponent<MeshFilter>().mesh = m.mesh;
-
-            //SceneManager.LoadScene("MainScene");
-            
-        }*/
-    }
-
-    private void OpimizeMesh()
-    {
-        for(int i = 0; i<voxelModel.transform.childCount; i++)
-        {
-            bool[] neighbor = new bool[6];
-            int neighbors = 0;
-
-            Vector3Int objPos = new Vector3Int((int)voxelModel.transform.GetChild(i).transform.position.x, (int)voxelModel.transform.GetChild(i).transform.position.y, (int)voxelModel.transform.GetChild(i).transform.position.z);
-            if (objPos.y < SceneController.dimensions.y)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y+1, objPos.z+ SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[0] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.y > 0)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y-1, objPos.z + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[1] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.x < SceneController.dimensions.x/2)
-            {
-                if (SceneController.gridOfObjects[objPos.x+1+ SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[2] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.x > -SceneController.dimensions.x / 2)
-            {
-                if (SceneController.gridOfObjects[objPos.x-1+ SceneController.dimensions.x / 2, objPos.y, objPos.z + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[3] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.z < SceneController.dimensions.z / 2)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y, objPos.z+1 + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[4] = true;
-                    neighbors++;
-                }
-            }
-            if (objPos.z > -SceneController.dimensions.z / 2)
-            {
-                if (SceneController.gridOfObjects[objPos.x+ SceneController.dimensions.x / 2, objPos.y, objPos.z-1 + SceneController.dimensions.y / 2] != null)
-                {
-                    neighbor[5] = true;
-                    neighbors++;
-                }
-            }
-            if (neighbors == 6)
-            {
-                Destroy(voxelModel.transform.GetChild(i));
-            }
-            else if(neighbors > 0)
-            {
-                Mesh mesh = voxelModel.transform.GetChild(i).transform.GetComponent<MeshFilter>().mesh;
-                int[] oldTriangles = mesh.triangles;
-                int[] newTriangles = new int[mesh.triangles.Length - neighbors*2*3];
-
-                HashSet<int> indices = new HashSet<int>(mesh.triangles.AsEnumerable().Distinct().Where(index =>
-                mesh.normals[index] == Vector3.up
-                ).ToList());
-                int counter = 0;
-                foreach (int h in indices)
-                {
-                    newTriangles[counter++] = h;
-                }
-            }
-        }
-    }
-
     public void SetDebugMode(bool debugMode)
     {
         this.debugMode = debugMode;
     }
-
-
-    /*
-    public void ResetRotation()
-    {
-        if (!refocusAnimation)
-        {
-            transformEulers = -1 * voxelModel.transform.eulerAngles / timeInFrames;
-            refocusAnimation = true;
-        }
-
-    }*/
     public void Undo()
     {
         CloseColorWheel(null);
@@ -318,7 +177,6 @@ public class UIController : MonoBehaviour
     }
     public void ChangeColor(Button button)
     {
-        Debug.Log("ButtonClick");
         if (button.transform.GetSiblingIndex() == 5)
         {
             if (!lastColorSelected)
@@ -328,7 +186,7 @@ public class UIController : MonoBehaviour
                 lastColorSelected = true;
             }
         }
-        if(Time.time- clickTime < 0.5f)
+        if(Time.time- clickTime < longPressBias)
         {
             CloseColorWheel(button);
         }
@@ -341,6 +199,7 @@ public class UIController : MonoBehaviour
             fcp.gameObject.SetActive(true);
             fcp.color = buttonColor;
         }
+        undoRedo.unsavedChanges = true;
     }
     private void SetSelectedColor(Button button)
     {
@@ -382,7 +241,7 @@ public class UIController : MonoBehaviour
     }
     public void ToggleColorWheel()
     {
-        if (Time.time - clickTime < 0.5f)
+        if (Time.time - clickTime < longPressBias)
         {
             if (!colorWheel.activeInHierarchy)
             {
@@ -408,6 +267,7 @@ public class UIController : MonoBehaviour
             fcp.gameObject.SetActive(true);
             fcp.color = buttonColor;
             SetSelectedColor(colorSelect);
+            undoRedo.unsavedChanges = true;
         }
     }
     public void CloseColorWheel(Button b)
@@ -490,21 +350,31 @@ public class UIController : MonoBehaviour
     }
     public void SaveLoad(Button saveState)
     {
-        if(comingFromSaveLoad == 0)
+        if(Time.time-clickTime < longPressBias)
         {
-            TryLoad(saveState);
+            if (comingFromSaveLoad == 0)
+            {
+                TryLoad(saveState);
+            }
+            else
+            {
+                TrySave(saveState);
+            }
         }
         else
         {
-            TrySave(saveState);
+            StartDeleteProcess(saveState);
         }
     }
     private void TryLoad(Button saveState)
     {
         string dataName = saveState.GetComponentInChildren<Text>().text;
+        CheckLoad(dataName);
+    }
+    private void CheckLoad(string dataName)
+    {
         string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
-
-        if(undoRedo.unsavedChanges)
+        if (undoRedo.unsavedChanges)
         {
             currentDataName = dataName;
             unsavedChangesWarning.SetActive(true);
@@ -569,7 +439,7 @@ public class UIController : MonoBehaviour
         menuAnimator.SetBool("activeSecondMenu", false);
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         undoRedo.unsavedChanges = false;
-        SaveSystem.SaveEditableModel(dataName, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
+        SaveSystem.SaveEditableModel(Application.persistentDataPath + "/models/" + dataName + ".vx", SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken, lastColorSelected, colorSelect.GetComponent<Image>().color, colorWheel);
     }
     private void LoadModel(string dataName)
     {
@@ -613,6 +483,31 @@ public class UIController : MonoBehaviour
                 }
             }
             undoRedo.resetList();
+
+            
+            lastColorSelected = modelData.lastColorPicked;
+            if (modelData.colorWheelColors != null)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    Color c = new Color(modelData.colorWheelColors[i, 0], modelData.colorWheelColors[i, 1], modelData.colorWheelColors[i, 2]);
+                    if (i == 0)
+                    {
+                        colorSelect.GetComponent<Image>().color = c;
+                    }
+                    else if (i == 5)
+                    {
+                        if (lastColorSelected)
+                        {
+                            colorWheel.transform.GetChild(i).GetComponent<Image>().color = c;
+                        }
+                    }
+                    else
+                    {
+                        colorWheel.transform.GetChild(i).GetComponent<Image>().color = c;
+                    }
+                }
+            }
         }
     }
     public void AcceptDiscard(bool fromLoad)
@@ -722,7 +617,6 @@ public class UIController : MonoBehaviour
         GameObject myEventSystem = GameObject.Find("EventSystem");
         myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
     }
-
     public void DisplaySaveInputField()
     {
         
@@ -847,12 +741,10 @@ public class UIController : MonoBehaviour
             }
         }
     }
-
     public void ExitProgram()
     {
         Application.Quit();
     }
-
     public void TryExitProgram()
     {
         CloseSecondMenu();
@@ -875,11 +767,75 @@ public class UIController : MonoBehaviour
             vk.ShowTouchKeyboard();
         }
     }
-
     public void CloseKeyboard()
     {
         {
             vk.HideTouchKeyboard();
         }
+    }
+    public void ShowImportWindow()
+    {
+        CloseSecondMenu();
+        string initialPath = "";
+        FileBrowser.SetFilters(false, new FileBrowser.Filter("", ".vx"));
+        FileBrowser.SetDefaultFilter(".vx");
+        FileBrowser.ShowLoadDialog((path) => ImportModel(path), null, false, initialPath, "Import", "Open");
+    }
+    private void ImportModel(string path)
+    {
+        CheckLoad(SaveSystem.ImportModel(path));
+    }
+    public void ShowExportWindow()
+    {
+        CloseSecondMenu();
+        string initialPath = "";
+        FileBrowser.SetFilters(false, new FileBrowser.Filter("", ".vx"), new FileBrowser.Filter("", ".obj"));
+        FileBrowser.SetDefaultFilter(".vx");
+        FileBrowser.ShowSaveDialog((path) => ExportModel(path), null, false, initialPath, "Export", "Create");
+    }
+    private void ExportModel(string path)
+    {
+        string extension = Path.GetExtension(path);
+        if (extension.Equals(".vx"))
+        {
+            SaveSystem.SaveEditableModel(path, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken, lastColorSelected, colorSelect.GetComponent<Image>().color, colorWheel);
+        }
+        else
+        {
+            bool executed;
+            SaveSystem.ExportModelToObj(path, voxelModel, out executed);
+            if (!executed)
+            {
+                OpenExportError();
+            }
+        }
+    }
+    private void StartDeleteProcess(Button clickedButton)
+    {
+        GameObject myEventSystem = GameObject.Find("EventSystem");
+        myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
+
+        Button overlayButton = Instantiate(savestate) as Button;
+        overlayButton.transform.SetParent(menu.transform.GetChild(0).transform.GetChild(2).transform.GetChild(0).transform.GetChild(0).transform,false);
+        overlayButton.transform.Find("Stroke").gameObject.SetActive(false);
+        Destroy(overlayButton.GetComponent<Animator>());
+        overlayButton.transform.position = clickedButton.transform.position;
+        //overlayButton.GetComponent<Button>().onClick.AddListener(delegate { SaveLoad(save); });
+        overlayButton.transform.Find("Text").GetComponent<Text>().text = clickedButton.GetComponentsInChildren<Text>()[0].text;
+        overlayButton.transform.Find("PointsText").GetComponent<Text>().text = clickedButton.GetComponentsInChildren<Text>()[1].text;
+
+        clickedButton.GetComponentsInChildren<Text>()[0].enabled = false;
+        clickedButton.GetComponentsInChildren<Text>()[1].enabled = false;
+        Color color = overlayButton.GetComponent<Image>().color;
+        color.a = 0.5f;
+        overlayButton.GetComponent<Image>().color = color;
+    }
+    public void CloseExportError()
+    {
+        exportErrorPanel.SetActive(false);
+    }
+    private void OpenExportError()
+    {
+        exportErrorPanel.SetActive(true);
     }
 }

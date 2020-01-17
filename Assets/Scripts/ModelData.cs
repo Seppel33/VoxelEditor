@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 [System.Serializable]
 public class ModelData
@@ -10,7 +11,9 @@ public class ModelData
     public bool[] blockThere;
     public int actions;
     public int timeTaken;
-    public ModelData(Vector3Int dimensions, int actions, int seconds)
+    public float[,] colorWheelColors;
+    public bool lastColorPicked;
+    public ModelData(Vector3Int dimensions, int actions, int seconds, bool selectedLastColor, Color mainColor, GameObject colorPicker)
     {
         this.actions = actions;
         timeTaken = seconds;
@@ -39,6 +42,17 @@ public class ModelData
                     count++;
                 }
             }
+        }
+        lastColorPicked = selectedLastColor;
+        colorWheelColors = new float[6, 3];
+        colorWheelColors[0, 0] = mainColor.r;
+        colorWheelColors[0, 1] = mainColor.g;
+        colorWheelColors[0, 2] = mainColor.b;
+        for (int i = 1; i< 6; i++)
+        {
+            colorWheelColors[i,0] = colorPicker.GetComponentsInChildren<Image>()[i].color.r;
+            colorWheelColors[i, 1] = colorPicker.GetComponentsInChildren<Image>()[i].color.g;
+            colorWheelColors[i, 2] = colorPicker.GetComponentsInChildren<Image>()[i].color.b;
         }
     }
     
