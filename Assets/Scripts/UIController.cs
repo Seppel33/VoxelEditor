@@ -45,6 +45,7 @@ public class UIController : MonoBehaviour
     public Animator menuAnimator;
     public GameObject NewSaveButtonGroup;
     public GameObject sizeSelectPopUp;
+    public GameObject exportErrorPanel;
 
     public Image pickedColor;
     public Color selectedColor;
@@ -57,10 +58,10 @@ public class UIController : MonoBehaviour
     private string currentDataName;
     private int comingFromSaveLoad;
     private VirtualKeyboard vk;
+    private GameObject m_objectOnClick;
     // Start is called before the first frame update
     void Start()
     {
-        
         vk = new VirtualKeyboard();
         selectedColor = pickedColor.GetComponent<Image>().color;
 
@@ -77,7 +78,6 @@ public class UIController : MonoBehaviour
 
         monitor.text = "DPs: " + Display.displays.Length + " Res: " + Screen.currentResolution + " TS: " + Input.touchSupported + " TC: " + Input.touchCount + " DPI: " + Screen.dpi + " SaveArea: " + Screen.safeArea;
     }
-
     // Update is called once per frame
     void Update()
     {
@@ -91,13 +91,11 @@ public class UIController : MonoBehaviour
             else
             {
                 debugInfos.SetActive(true);
-                //DebugCursor.SetActive(true);
             }
         }
         else if (debugInfos.activeSelf)
         {
             debugInfos.SetActive(false);
-            //DebugCursor.SetActive(false);
         }
 
         if (colorWheelAnimation)
@@ -140,23 +138,10 @@ public class UIController : MonoBehaviour
             }
         }
     }
-
     public void SetDebugMode(bool debugMode)
     {
         this.debugMode = debugMode;
     }
-
-
-    /*
-    public void ResetRotation()
-    {
-        if (!refocusAnimation)
-        {
-            transformEulers = -1 * voxelModel.transform.eulerAngles / timeInFrames;
-            refocusAnimation = true;
-        }
-
-    }*/
     public void Undo()
     {
         CloseColorWheel(null);
@@ -192,7 +177,6 @@ public class UIController : MonoBehaviour
     }
     public void ChangeColor(Button button)
     {
-        Debug.Log("ButtonClick");
         if (button.transform.GetSiblingIndex() == 5)
         {
             if (!lastColorSelected)
@@ -215,6 +199,7 @@ public class UIController : MonoBehaviour
             fcp.gameObject.SetActive(true);
             fcp.color = buttonColor;
         }
+        undoRedo.unsavedChanges = true;
     }
     private void SetSelectedColor(Button button)
     {
@@ -282,6 +267,7 @@ public class UIController : MonoBehaviour
             fcp.gameObject.SetActive(true);
             fcp.color = buttonColor;
             SetSelectedColor(colorSelect);
+            undoRedo.unsavedChanges = true;
         }
     }
     public void CloseColorWheel(Button b)
@@ -377,7 +363,7 @@ public class UIController : MonoBehaviour
         }
         else
         {
-            //StartDeleteProcess(savestate);
+            StartDeleteProcess(saveState);
         }
     }
     private void TryLoad(Button saveState)
@@ -453,7 +439,7 @@ public class UIController : MonoBehaviour
         menuAnimator.SetBool("activeSecondMenu", false);
         menu.transform.GetChild(1).transform.GetChild(0).transform.Find("SaveButton").GetComponent<Animator>().SetBool("SelectedByCode", false);
         undoRedo.unsavedChanges = false;
-        SaveSystem.SaveEditableModel(Application.persistentDataPath + "/models/" + dataName + ".vx", SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
+        SaveSystem.SaveEditableModel(Application.persistentDataPath + "/models/" + dataName + ".vx", SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken, lastColorSelected, colorSelect.GetComponent<Image>().color, colorWheel);
     }
     private void LoadModel(string dataName)
     {
@@ -497,6 +483,31 @@ public class UIController : MonoBehaviour
                 }
             }
             undoRedo.resetList();
+
+            
+            lastColorSelected = modelData.lastColorPicked;
+            if (modelData.colorWheelColors != null)
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    Color c = new Color(modelData.colorWheelColors[i, 0], modelData.colorWheelColors[i, 1], modelData.colorWheelColors[i, 2]);
+                    if (i == 0)
+                    {
+                        colorSelect.GetComponent<Image>().color = c;
+                    }
+                    else if (i == 5)
+                    {
+                        if (lastColorSelected)
+                        {
+                            colorWheel.transform.GetChild(i).GetComponent<Image>().color = c;
+                        }
+                    }
+                    else
+                    {
+                        colorWheel.transform.GetChild(i).GetComponent<Image>().color = c;
+                    }
+                }
+            }
         }
     }
     public void AcceptDiscard(bool fromLoad)
@@ -606,7 +617,6 @@ public class UIController : MonoBehaviour
         GameObject myEventSystem = GameObject.Find("EventSystem");
         myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
     }
-
     public void DisplaySaveInputField()
     {
         
@@ -731,12 +741,10 @@ public class UIController : MonoBehaviour
             }
         }
     }
-
     public void ExitProgram()
     {
         Application.Quit();
     }
-
     public void TryExitProgram()
     {
         CloseSecondMenu();
@@ -759,7 +767,6 @@ public class UIController : MonoBehaviour
             vk.ShowTouchKeyboard();
         }
     }
-
     public void CloseKeyboard()
     {
         {
@@ -791,25 +798,44 @@ public class UIController : MonoBehaviour
         string extension = Path.GetExtension(path);
         if (extension.Equals(".vx"))
         {
-            SaveSystem.SaveEditableModel(path, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken);
+            SaveSystem.SaveEditableModel(path, SceneController.dimensions, SceneController.actionsQuantity, (int)SceneController.timeTaken, lastColorSelected, colorSelect.GetComponent<Image>().color, colorWheel);
         }
         else
         {
-            SaveSystem.ExportModelToObj(path, voxelModel);
+            bool executed;
+            SaveSystem.ExportModelToObj(path, voxelModel, out executed);
+            if (!executed)
+            {
+                OpenExportError();
+            }
         }
     }
     private void StartDeleteProcess(Button clickedButton)
     {
-        Button overlayButton = Instantiate(savestate) as Button;
-        overlayButton.transform.SetParent(menu.transform.GetChild(0).transform.GetChild(2).transform.GetChild(0).transform.GetChild(0).transform);
-        //overlayButton.GetComponent<Button>().onClick.AddListener(delegate { SaveLoad(save); });
-        overlayButton.transform.Find("Text").GetComponent<Text>().text = clickedButton.transform.Find("Text").GetComponent<Text>().text;
-        overlayButton.transform.Find("PointsText").GetComponent<Text>().text = clickedButton.transform.Find("PointsText").GetComponent<Text>().text;
+        GameObject myEventSystem = GameObject.Find("EventSystem");
+        myEventSystem.GetComponent<UnityEngine.EventSystems.EventSystem>().SetSelectedGameObject(null);
 
-        clickedButton.transform.Find("Text").GetComponent<Text>().enabled = false;
-        clickedButton.transform.Find("PointsText").GetComponent<Text>().enabled = false;
+        Button overlayButton = Instantiate(savestate) as Button;
+        overlayButton.transform.SetParent(menu.transform.GetChild(0).transform.GetChild(2).transform.GetChild(0).transform.GetChild(0).transform,false);
+        overlayButton.transform.Find("Stroke").gameObject.SetActive(false);
+        Destroy(overlayButton.GetComponent<Animator>());
+        overlayButton.transform.position = clickedButton.transform.position;
+        //overlayButton.GetComponent<Button>().onClick.AddListener(delegate { SaveLoad(save); });
+        overlayButton.transform.Find("Text").GetComponent<Text>().text = clickedButton.GetComponentsInChildren<Text>()[0].text;
+        overlayButton.transform.Find("PointsText").GetComponent<Text>().text = clickedButton.GetComponentsInChildren<Text>()[1].text;
+
+        clickedButton.GetComponentsInChildren<Text>()[0].enabled = false;
+        clickedButton.GetComponentsInChildren<Text>()[1].enabled = false;
         Color color = overlayButton.GetComponent<Image>().color;
-        color.a = 1;
+        color.a = 0.5f;
         overlayButton.GetComponent<Image>().color = color;
+    }
+    public void CloseExportError()
+    {
+        exportErrorPanel.SetActive(false);
+    }
+    private void OpenExportError()
+    {
+        exportErrorPanel.SetActive(true);
     }
 }

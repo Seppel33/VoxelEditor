@@ -4,7 +4,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 public static class SaveSystem
 {
-    public static void SaveEditableModel(string path, Vector3Int dimensions, int actionsQuantity, int timeTaken)
+    public static void SaveEditableModel(string path, Vector3Int dimensions, int actionsQuantity, int timeTaken, bool selectedLastColor, Color mainColor, GameObject colorPicker)
     {
         try
         {
@@ -23,7 +23,7 @@ public static class SaveSystem
 
         FileStream stream = new FileStream(path, FileMode.Create);
 
-        ModelData data = new ModelData(dimensions, actionsQuantity, timeTaken);
+        ModelData data = new ModelData(dimensions, actionsQuantity, timeTaken, selectedLastColor, mainColor, colorPicker);
 
         formatter.Serialize(stream, data);
 
@@ -65,15 +65,26 @@ public static class SaveSystem
         System.IO.File.Copy(path, Application.persistentDataPath + "/models/" + name +".vx", true);
         return name;
     }
-    public static void ExportModelToObj(string path, GameObject voxelModel)
+    public static void ExportModelToObj(string path, GameObject voxelModel, out bool executed)
     {
         MeshHandler meshHandler = new MeshHandler();
         if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
         {
             GameObject fullMeshObject = meshHandler.CreateTempModel(voxelModel);
             if (meshHandler.PrepareMesh(ref fullMeshObject))
+            {
                 ObjExporter.MeshToFile(fullMeshObject, path);
+                executed = true;
+            }
+            else
+            {
+                executed = false;
+            }
             meshHandler.DestroyTempModel();
+        }
+        else
+        {
+            executed = false;
         }
     }
     public static Settings LoadSettings()

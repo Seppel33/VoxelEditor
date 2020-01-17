@@ -421,7 +421,6 @@ public class FlexibleColorPicker : MonoBehaviour {
         if(comesFromButton != null)
         {
             comesFromButton.GetComponent<Image>().color = color;
-            Debug.Log(color);
         }
     }
 
