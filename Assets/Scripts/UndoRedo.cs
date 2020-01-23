@@ -16,7 +16,7 @@ public class UndoRedo : MonoBehaviour
     {
         if(undoPosition != 0)
         {
-            decreaseUndoPosition();
+            DecreaseUndoPosition();
 
             if((int)m_lastActions[undoPosition][0] == 0)
             {
@@ -114,7 +114,7 @@ public class UndoRedo : MonoBehaviour
                     rend.material.SetColor("Color_E5F6C120", (Color)m_lastActions[undoPosition][2]);
                 }
             }
-            increaseUndoPosition();
+            IncreaseUndoPosition();
             undoButton.interactable = true;
             if (undoPosition == m_lastActions.Count)
             {
@@ -123,9 +123,9 @@ public class UndoRedo : MonoBehaviour
         }
     }
 
-    public void addAction(ArrayList action)
+    public void AddAction(ArrayList action)
     {
-        resetRedo();
+        ResetRedo();
         m_lastActions.Add(action);
         if (m_lastActions.Count > maxUndo)
         {
@@ -156,26 +156,26 @@ public class UndoRedo : MonoBehaviour
             }*/
             m_lastActions.RemoveAt(0);
         }
-        increaseUndoPosition();
+        IncreaseUndoPosition();
         unsavedChanges = true;
         undoButton.interactable = true;
     }
 
-    private void increaseUndoPosition()
+    private void IncreaseUndoPosition()
     {
         if(undoPosition < maxUndo)
         {
             undoPosition++;
         }
     }
-    private void decreaseUndoPosition()
+    private void DecreaseUndoPosition()
     {
         if (undoPosition > 0)
         {
             undoPosition--;
         }
     }
-    private void resetRedo()
+    private void ResetRedo()
     {
         for(int i = m_lastActions.Count-1; i>= undoPosition; i--)
         {

@@ -24,24 +24,21 @@ public class CameraController : MonoBehaviour
 
     private void OnEnable()
     {
-        RotateGesture.Transformed += rotateTransformedHandler;
-        ZoomGesture.Transformed += zoomTransformedHandler;
+        RotateGesture.Transformed += RotateTransformedHandler;
+        ZoomGesture.Transformed += ZoomTransformedHandler;
     }
     private void OnDisable()
     {
-        RotateGesture.Transformed -= rotateTransformedHandler;
-        ZoomGesture.Transformed -= zoomTransformedHandler;
+        RotateGesture.Transformed -= RotateTransformedHandler;
+        ZoomGesture.Transformed -= ZoomTransformedHandler;
     }
 
     void LateUpdate()
     {
-        if (!SceneController.activeTouchControl)
-        {
-            MouseControls();
-        }
+        MouseControls();
     }
 
-    private void rotateTransformedHandler(object sender, System.EventArgs e)
+    private void RotateTransformedHandler(object sender, System.EventArgs e)
     {
         if (!UIController.GetActiveMenu())
         {
@@ -52,7 +49,7 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    private void zoomTransformedHandler(object sender, System.EventArgs e)
+    private void ZoomTransformedHandler(object sender, System.EventArgs e)
     {
         if (!UIController.GetActiveMenu())
         {

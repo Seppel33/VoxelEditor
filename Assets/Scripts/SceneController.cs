@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
@@ -20,12 +21,15 @@ public class SceneController : MonoBehaviour
     private static bool arMode = false;
     private static bool vrMode = false;
     private static bool onMobile = false;
+    public static bool standalone = true;
 
     private Vector3 originPointerPosition;
     private Vector3 correctedOriginPointerPosition;
     private int[] startPosData = new int[3];
     private bool touched;
     private bool possible;
+    private Vector3 oldMousePosition = new Vector3();
+    public bool mouseMoved = false;
 
     private Renderer rend;
     [SerializeField]
@@ -34,6 +38,7 @@ public class SceneController : MonoBehaviour
     public static GameObject[,,] gridOfObjects;
     public static int actionsQuantity;
     public static float timeTaken;
+    public static string lastDebugMessage;
 
     private bool moveGesture = false;
 
@@ -41,16 +46,21 @@ public class SceneController : MonoBehaviour
     public bool debugMode = true;
     public bool buggyTouchCountInEditor = false; //for inspector
     public static bool buggyTouchCountInEdit;
-    public bool activeTouchControls = false;
-    public static bool activeTouchControl;
     private int touchCountEditorFix = 0;
     public static Settings settings;
     // Start is called before the first frame update
     void Start()
     {
+        Input.simulateMouseWithTouches = false;
         if (Application.isEditor && buggyTouchCountInEditor)
         {
             touchCountEditorFix++;
+        }
+
+        Debug.Log("Scenes in Project: " + SceneManager.sceneCountInBuildSettings);
+        if (SceneManager.sceneCountInBuildSettings > 1)
+        {
+            standalone = false;
         }
         string operatingSystem = SystemInfo.operatingSystem;
         if (operatingSystem[0] == 'i' || operatingSystem[0] == 'A')
@@ -61,7 +71,6 @@ public class SceneController : MonoBehaviour
         Debug.Log(SystemInfo.deviceModel);
         UIController.SetDebugMode(debugMode);
         buggyTouchCountInEdit = buggyTouchCountInEditor;
-        activeTouchControl = activeTouchControls;
         dimensions = dimension;
         gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
         settings = SaveSystem.LoadSettings();
@@ -71,8 +80,9 @@ public class SceneController : MonoBehaviour
             settings.startedOnce = true;
             SaveSystem.SaveSettings(settings);
         }
-        updateScene();
-        
+        oldMousePosition = Input.mousePosition;
+        UpdateScene();
+
     }
 
     // Update is called once per frame
@@ -88,71 +98,47 @@ public class SceneController : MonoBehaviour
         }
         else
         {
-            if (!UIController.GetActiveColorSelector() && !UIController.GetActiveMenu())
+            if (!UIController.GetActiveColorSelector() && !UIController.GetActiveMenu() && !EventSystem.current.IsPointerOverGameObject())
             {
-                if (activeTouchControl)
+                if (Input.touchCount > 1)
                 {
-                    if (Input.touchCount > 1)
-                    {
-                        moveGesture = true;
-
-                    }
-                    else if (Input.touchCount == 0)
-                    {
-                        moveGesture = false;
-                    }
-                    switch (UIController.selectedState)
-                    {
-                        case 0:
-                            touchBuildControl();
-                            break;
-                        case 1:
-                            touchDeleteControl();
-                            break;
-                        case 2:
-                            touchPaintControl();
-                            break;
-                    }
+                    mouseMoved = false;
+                    oldMousePosition = Input.mousePosition;
+                    moveGesture = true;
+                }
+                else if (Input.touchCount == 0)
+                {
+                    moveGesture = false;
                 }
                 else
                 {
-                    switch (UIController.selectedState)
-                    {
-                        case 0:
-                            standardBuildControl();
-                            break;
-                        case 1:
-                            standardDeleteControl();
-                            break;
-                        case 2:
-                            standardPaintControl();
-                            break;
-                    }
+                    mouseMoved = false;
+                    oldMousePosition = Input.mousePosition;
+                }
+                if (oldMousePosition != Input.mousePosition)
+                {
+                    mouseMoved = true;
+                }
+
+                switch (UIController.selectedState)
+                {
+                    case 0:
+                        StandardControlOnBlock();
+                        break;
+                    case 1:
+                        StandardControlInBlock(0);
+                        break;
+                    case 2:
+                        StandardControlInBlock(1);
+                        break;
                 }
                 timeTaken += Time.deltaTime;
-            } else if (Input.GetMouseButton(0) || Input.GetMouseButton(1) || (Input.touchCount == 1 && Input.GetTouch(0).phase != TouchPhase.Ended))
+            }
+            else if (Input.GetMouseButton(0) || Input.GetMouseButton(1) || (Input.touchCount == 1 && Input.GetTouch(0).phase != TouchPhase.Ended))
             {
-                if (activeTouchControl)
+                if (Input.touchCount == 1)//temporary
                 {
-                    if (Input.touchCount == 1)//temporary
-                    {
-                        if (!EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
-                        {
-                            if (UIController.GetActiveMenu())
-                            {
-                                //UIController.toggleMenu();
-                            }
-                            else
-                            {
-                                UIController.CloseColorWheel(null);
-                            }
-
-                        }
-                    }
-                }
-                else
-                {
-                    if(!EventSystem.current.IsPointerOverGameObject())
+                    if (!EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
                     {
                         if (UIController.GetActiveMenu())
                         {
@@ -164,15 +150,26 @@ public class SceneController : MonoBehaviour
                         }
                     }
                 }
+                else if (!EventSystem.current.IsPointerOverGameObject())
+                {
+                    if (UIController.GetActiveMenu())
+                    {
+                        //UIController.toggleMenu();
+                    }
+                    else
+                    {
+                        UIController.CloseColorWheel(null);
+                    }
+                }
             }
-            else if(UIController.GetActiveColorSelector())
+
+            else if (UIController.GetActiveColorSelector())
             {
                 timeTaken += Time.deltaTime;
             }
         }
-
     }
-    public void updateScene()
+    public void UpdateScene()
     {
         groundPlane.transform.localScale = new Vector3(dimensions.x / 10f, 1, dimensions.z / 10f);
         borderCollider.transform.localScale = new Vector3(dimensions.x / 10f, dimensions.y / 10f, dimensions.z / 10f);
@@ -181,15 +178,14 @@ public class SceneController : MonoBehaviour
         rend.material.shader = Shader.Find("Shader Graphs/Ground");
         rend.material.SetVector("Vector2_3CDFD44B", new Vector4(dimensions.x, dimensions.z, 0, 0));
     }
-    public static bool getArMode()
+    public static bool GetArMode()
     {
         return arMode;
     }
-    public static bool getOnMobile()
+    public static bool GetOnMobile()
     {
         return onMobile;
     }
-
     private void DeleteObj(ArrayList cubes)
     {
         ArrayList action = new ArrayList();
@@ -201,16 +197,16 @@ public class SceneController : MonoBehaviour
             gridOfObjects[(int)g.transform.position.x + (int)(dimensions.x / 2), (int)g.transform.position.y, (int)g.transform.position.z + (int)(dimensions.z / 2)] = null;
             g.SetActive(false);
         }
-        undoRedoScript.addAction(action);
+        undoRedoScript.AddAction(action);
     }
     public void ClearGrid()
     {
-        foreach(Transform child in voxelModel.transform.GetComponentInChildren<Transform>())
+        foreach (Transform child in voxelModel.transform.GetComponentInChildren<Transform>())
         {
             Destroy(child.gameObject);
         }
     }
-    private Vector2[] calculateBounds(Vector3 endPosition)
+    private Vector2[] CalculateBounds(Vector3 endPosition)
     {
         //start- & end-position of selection
         Vector2[] bounds = new Vector2[3];
@@ -242,7 +238,7 @@ public class SceneController : MonoBehaviour
         }
         return bounds;
     }
-    private Vector3 correctedPositions(Vector3 endPosition, bool touched, out int[] endPosData, int state)
+    private Vector3 CorrectedPositions(Vector3 endPosition, bool touched, out int[] endPosData, int state)
     {
         endPosData = new int[3];
         Vector3 output = endPosition;
@@ -264,7 +260,7 @@ public class SceneController : MonoBehaviour
             output.x = -dimensions.x / 2;
             endPosData[0] = 0;
         }
-        else if(output.x > dimensions.x / 2)
+        else if (output.x > dimensions.x / 2)
         {
             output.x = dimensions.x / 2;
             endPosData[0] = 1;
@@ -281,7 +277,7 @@ public class SceneController : MonoBehaviour
         }
         else if (output.y >= dimensions.y)
         {
-            output.y = dimensions.y-1;
+            output.y = dimensions.y - 1;
             endPosData[1] = 1;
         }
         else
@@ -304,7 +300,7 @@ public class SceneController : MonoBehaviour
             endPosData[2] = 2;
             count++;
         }
-        if (touched && checkIfPossible(endPosData, endPosition, output))
+        if (touched && CheckIfPossible(endPosData, endPosition, output))
         {
             switch (state)
             {
@@ -319,7 +315,7 @@ public class SceneController : MonoBehaviour
                     break;
             }
         }
-        else if(count == 3)
+        else if (count == 3)
         {
             switch (state)
             {
@@ -336,37 +332,48 @@ public class SceneController : MonoBehaviour
         }
         return output;
     }
-    private bool checkIfPossible(int[] endPosData, Vector3 endposition, Vector3 output)
+    private bool CheckIfPossible(int[] endPosData, Vector3 endposition, Vector3 output)
     {
         possible = false;
 
-        if((endposition == output || originPointerPosition == correctedOriginPointerPosition) || isOpposite(endPosData)){
+        if ((endposition == output || originPointerPosition == correctedOriginPointerPosition) || IsOpposite(endPosData))
+        {
             possible = true;
         }
 
         return possible;
     }
-    private bool isOpposite(int[] endPosData)
+    private bool IsOpposite(int[] endPosData)
     {
         bool isOpposite = false;
 
-        if((endPosData[0] != startPosData[0] && ((endPosData[1] != startPosData[1] || endPosData[2] != startPosData[2]) || (endPosData[1] == 2 && endPosData[2] == 2 && startPosData[1] == 2 && startPosData[2] == 2)))     || (endPosData[1] != startPosData[1] && ((endPosData[0] != startPosData[0] || endPosData[2] != startPosData[2]) || (endPosData[0] == 2 && endPosData[2] == 2 && startPosData[0] == 2 && startPosData[2] == 2)))     || (endPosData[2] != startPosData[2] && ((endPosData[1] != startPosData[1] || endPosData[0] != startPosData[0]) || (endPosData[1] == 2 && endPosData[0] == 2 && startPosData[1] == 2 && startPosData[0] == 2))))
+        if ((endPosData[0] != startPosData[0] && ((endPosData[1] != startPosData[1] || endPosData[2] != startPosData[2]) || (endPosData[1] == 2 && endPosData[2] == 2 && startPosData[1] == 2 && startPosData[2] == 2))) || (endPosData[1] != startPosData[1] && ((endPosData[0] != startPosData[0] || endPosData[2] != startPosData[2]) || (endPosData[0] == 2 && endPosData[2] == 2 && startPosData[0] == 2 && startPosData[2] == 2))) || (endPosData[2] != startPosData[2] && ((endPosData[1] != startPosData[1] || endPosData[0] != startPosData[0]) || (endPosData[1] == 2 && endPosData[0] == 2 && startPosData[1] == 2 && startPosData[0] == 2))))
         {
             isOpposite = true;
         }
 
         return isOpposite;
     }
-    public void touchBuildControl()
+    public void StandardControlOnBlock()
     {
         deleteSelector.SetActive(false);
-        if ((Input.touchCount < touchCountEditorFix + 2 && Input.touchCount > touchCountEditorFix) && !moveGesture)
+        if (((Input.touchCount < touchCountEditorFix + 2 && Input.touchCount > touchCountEditorFix) && !moveGesture) || (mouseMoved))
         {
             RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.GetTouch(touchCountEditorFix).position);
+            Ray ray;
+            bool withMouse;
+            if (mouseMoved)
+            {
+                ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                withMouse = true;
+            }
+            else
+            {
+                ray = Camera.main.ScreenPointToRay(Input.GetTouch(touchCountEditorFix).position);
+                withMouse = false;
+            }
             if (Physics.Raycast(ray, out hit, 100.0f))
             {
-
                 Vector3 endPosition = hit.point + hit.normal / 2;
 
                 endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
@@ -374,30 +381,48 @@ public class SceneController : MonoBehaviour
                 endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
 
                 int[] endPosData;
-                Vector3 newEndPosition = correctedPositions(endPosition, touched, out endPosData, 0);
+                Vector3 newEndPosition = CorrectedPositions(endPosition, touched, out endPosData, 0);
 
                 tileSelector.transform.position = newEndPosition;
 
                 tileSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
 
                 bool endedTouch = false;
+                if (!withMouse)
+                {
+                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
+                    {
+                        touched = true;
+                        originPointerPosition = endPosition;
+                        correctedOriginPointerPosition = newEndPosition;
+                        startPosData = endPosData;
+                    }
+                    else if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Ended)
+                    {
+                        endedTouch = true;
+                    }
+                }
+                else
+                {
+                    if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
+                    {
+                        touched = true;
+                        originPointerPosition = endPosition;
+                        correctedOriginPointerPosition = newEndPosition;
+                        startPosData = endPosData;
+                    }
+                    else if (Input.GetMouseButtonUp(0))
+                    {
+                        endedTouch = true;
+                    }
+                }
 
-                if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
-                {
-                    touched = true;
-                    originPointerPosition = endPosition;
-                    correctedOriginPointerPosition = newEndPosition;
-                    startPosData = endPosData;
-                }
-                else if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Ended)
-                {
-                    endedTouch = true;
-                }
                 if (possible && touched)
                 {
-                    if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
+                    if (((Input.touchCount == touchCountEditorFix + 1 && !withMouse) || (Input.GetMouseButton(0) && withMouse)) && !endedTouch)
                     {
                         Vector3 difference = newEndPosition - correctedOriginPointerPosition;
+
                         tileSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
                         tileSelector.transform.position = correctedOriginPointerPosition + difference / 2;
 
@@ -412,10 +437,11 @@ public class SceneController : MonoBehaviour
                     }
                     else if (endedTouch)
                     {
-                        buildSelected(newEndPosition);
+                        BuildSelected(newEndPosition);
                         touched = false;
                     }
-                }else if (endedTouch)
+                }
+                else if (endedTouch)
                 {
                     touched = false;
                 }
@@ -431,71 +457,133 @@ public class SceneController : MonoBehaviour
             touched = false;
         }
     }
-    private void standardBuildControl()
+
+    private void StandardControlInBlock(int state)
     {
-        deleteSelector.SetActive(false);
-
-        RaycastHit hit;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out hit, 100.0f))
+        tileSelector.SetActive(false);
+        if (((Input.touchCount < touchCountEditorFix + 2 && Input.touchCount > touchCountEditorFix) && !moveGesture) || (mouseMoved))
         {
-            
-            Vector3 endPosition = hit.point + hit.normal / 2;
-
-            endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
-            endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
-            endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
-
-            int[] endPosData;
-            Vector3 newEndPosition = correctedPositions(endPosition, touched, out endPosData, 0);
-
-            tileSelector.transform.position = endPosition;
-
-            tileSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
-
-            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
+            RaycastHit hit;
+            Ray ray;
+            bool withMouse;
+            if (mouseMoved)
             {
-                originPointerPosition = endPosition;
-                correctedOriginPointerPosition = newEndPosition;
-                startPosData = endPosData;
-                touched = true;
+                ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                withMouse = true;
             }
-            if (possible && touched)
+            else
             {
-                if (Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0))
+                ray = Camera.main.ScreenPointToRay(Input.GetTouch(touchCountEditorFix).position);
+                withMouse = false;
+            }
+            if (Physics.Raycast(ray, out hit, 100.0f))
+            {
+                if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
                 {
-                    Vector3 difference = newEndPosition - correctedOriginPointerPosition;
-                    tileSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
-                    tileSelector.transform.position = correctedOriginPointerPosition + difference / 2;
+                    Vector3 endPosition = hit.point - hit.normal / 2;
 
-                    int children = tileSelector.transform.GetChild(0).transform.childCount;
-                    for (int i = 0; i < children; ++i)
+                    endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
+                    endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
+                    endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
+
+                    if (endPosition.y < 0)
                     {
-                        rend = tileSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
-                        rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
-                        rend.material.SetFloat("Vector1_D6E874BF", (tileSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
+                        endPosition.y = 0;
+                    }
+
+                    int[] endPosData;
+                    Vector3 newEndPosition = CorrectedPositions(endPosition, touched, out endPosData, 1);
+
+                    deleteSelector.transform.position = endPosition;
+                    deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
+
+                    bool endedTouch = false;
+                    if (!withMouse)
+                    {
+                        if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
+                        {
+                            touched = true;
+                            originPointerPosition = endPosition;
+                            correctedOriginPointerPosition = newEndPosition;
+                            startPosData = endPosData;
+                        }
+                        else if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Ended)
+                        {
+                            endedTouch = true;
+                        }
+                    }
+                    else
+                    {
+                        if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
+                        {
+                            touched = true;
+                            originPointerPosition = endPosition;
+                            correctedOriginPointerPosition = newEndPosition;
+                            startPosData = endPosData;
+                        }
+                        else if (Input.GetMouseButtonUp(0))
+                        {
+                            endedTouch = true;
+                        }
+                    }
+                    if (possible && touched)
+                    {
+                        if (((Input.touchCount == touchCountEditorFix + 1 && !withMouse) || (Input.GetMouseButton(0) && withMouse)) && !endedTouch)
+                        {
+                            Vector3 difference = newEndPosition - correctedOriginPointerPosition;
+                            deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
+                            deleteSelector.transform.position = correctedOriginPointerPosition + difference / 2;
+
+                            /*
+                            int children = deleteSelector.transform.GetChild(0).transform.childCount;
+                            for (int i = 0; i < children; ++i)
+                            {
+                                rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
+                                rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
+                                rend.material.SetFloat("Vector1_D6E874BF", (deleteSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
+                            }
+                            */
+                        }
+                        else if (endedTouch)
+                        {
+                            switch (state)
+                            {
+                                case 0:
+                                    DeleteSelected(newEndPosition);
+                                    break;
+                                case 1:
+                                    PaintSelected(newEndPosition);
+                                    break;
+                            }
+
+                            touched = false;
+                        }
+                    }
+                    else if (endedTouch)
+                    {
+                        touched = false;
                     }
                 }
-                else if (Input.GetMouseButtonUp(0))
+                else
                 {
-                    buildSelected(newEndPosition);
-                    touched = false;
+                    deleteSelector.SetActive(false);
                 }
             }
-            else if (Input.GetMouseButtonUp(0))
+            else
             {
-                touched = false;
+                deleteSelector.SetActive(false);
             }
         }
         else
         {
-            tileSelector.SetActive(false);
+            deleteSelector.SetActive(false);
+            touched = false;
         }
     }
-    private void buildSelected(Vector3 endPosition)
+    private void BuildSelected(Vector3 endPosition)
     {
         actionsQuantity++;
-        Vector2[] bounds = calculateBounds(endPosition);
+        Vector2[] bounds = CalculateBounds(endPosition);
 
         ArrayList replacedCubes = new ArrayList();
         ArrayList placedCubes = new ArrayList();
@@ -538,7 +626,7 @@ public class SceneController : MonoBehaviour
             action.Add(replacedCubes); //replacedCubes -> group of replaced gameobjects
         }
 
-        undoRedoScript.addAction(action);
+        undoRedoScript.AddAction(action);
         tileSelector.transform.localScale = new Vector3(1, 1, 1);
         tileSelector.transform.position = endPosition;
         int children = tileSelector.transform.GetChild(0).transform.childCount;
@@ -549,168 +637,9 @@ public class SceneController : MonoBehaviour
             rend.material.SetFloat("Vector1_D6E874BF", 0.8f);
         }
     }
-    private void standardDeleteControl()
+    private void DeleteSelected(Vector3 endPosition)
     {
-        tileSelector.SetActive(false);
-        RaycastHit hit;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out hit, 100.0f))
-        {
-            if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
-            {
-                Vector3 endPosition = hit.point - hit.normal / 2;
-
-                endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
-                endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
-                endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
-
-                if (endPosition.y < 0)
-                {
-                    endPosition.y = 0;
-                }
-
-                int[] endPosData;
-                Vector3 newEndPosition = correctedPositions(endPosition, touched, out endPosData, 1);
-
-                deleteSelector.transform.position = endPosition;
-                deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
-
-                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
-                {
-                    originPointerPosition = endPosition;
-                    correctedOriginPointerPosition = newEndPosition;
-                    startPosData = endPosData;
-                    touched = true;
-                }
-                if (possible && touched)
-                {
-                    if (Input.GetMouseButton(0))
-                    {
-                        Vector3 difference = newEndPosition - correctedOriginPointerPosition;
-                        deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
-                        deleteSelector.transform.position = correctedOriginPointerPosition + difference / 2;
-
-                        /*
-                        int children = deleteSelector.transform.GetChild(0).transform.childCount;
-                        for (int i = 0; i < children; ++i)
-                        {
-                            rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
-                            rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
-                            rend.material.SetFloat("Vector1_D6E874BF", (deleteSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
-                        }
-                        */
-
-                    }
-                    else if (Input.GetMouseButtonUp(0))
-                    {
-                        deleteSelected(newEndPosition);
-                        touched = false;
-                    }
-                }
-                else if (Input.GetMouseButtonUp(0))
-                {
-                    touched = false;
-                }
-
-            }
-            else
-            {
-                deleteSelector.SetActive(false);
-            }
-        }
-
-    }
-    private void touchDeleteControl()
-    {
-        tileSelector.SetActive(false);
-        if ((Input.touchCount < touchCountEditorFix + 2 && Input.touchCount > touchCountEditorFix) && !moveGesture)
-        {
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.GetTouch(touchCountEditorFix).position);
-            if (Physics.Raycast(ray, out hit, 100.0f))
-            {
-                if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
-                {
-                    Vector3 endPosition = hit.point - hit.normal / 2;
-
-                    endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
-                    endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
-                    endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
-
-                    if (endPosition.y < 0)
-                    {
-                        endPosition.y = 0;
-                    }
-
-                    int[] endPosData;
-                    Vector3 newEndPosition = correctedPositions(endPosition, touched, out endPosData, 1);
-
-                    deleteSelector.transform.position = endPosition;
-                    deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
-
-                    bool endedTouch = false;
-
-                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
-                    {
-                        touched = true;
-                        originPointerPosition = endPosition;
-                        correctedOriginPointerPosition = newEndPosition;
-                        startPosData = endPosData;
-                    }
-                    else if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Ended)
-                    {
-                        endedTouch = true;
-                    }
-                    if (possible && touched)
-                    {
-                        if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
-                        {
-                            Vector3 difference = newEndPosition - correctedOriginPointerPosition;
-                            deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
-                            deleteSelector.transform.position = correctedOriginPointerPosition + difference / 2;
-
-                            /*
-                            int children = deleteSelector.transform.GetChild(0).transform.childCount;
-                            for (int i = 0; i < children; ++i)
-                            {
-                                rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
-                                rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
-                                rend.material.SetFloat("Vector1_D6E874BF", (deleteSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
-                            }
-                            */
-
-                        }
-                        else if (endedTouch)
-                        {
-                            deleteSelected(newEndPosition);
-                            touched = false;
-                        }
-                    }
-                    else if (endedTouch)
-                    {
-                        touched = false;
-                    }
-                }
-                else
-                {
-                    deleteSelector.SetActive(false);
-                }
-            }
-            else
-            {
-                deleteSelector.SetActive(false);
-            }
-        }
-        else
-        {
-            deleteSelector.SetActive(false);
-            touched = false;
-        }
-    }
-
-    private void deleteSelected(Vector3 endPosition)
-    {
-        Vector2[] bounds = calculateBounds(endPosition);
+        Vector2[] bounds = CalculateBounds(endPosition);
 
         ArrayList deletedCubes = new ArrayList();
 
@@ -744,166 +673,9 @@ public class SceneController : MonoBehaviour
             rend.material.SetFloat("Vector1_D6E874BF", 0.8f);
         }*/
     }
-    public void standardPaintControl()
+    private void PaintSelected(Vector3 endPosition)
     {
-        tileSelector.SetActive(false);
-        RaycastHit hit;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out hit, 100.0f))
-        {
-            if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
-            {
-                Vector3 endPosition = hit.point - hit.normal / 2;
-
-                endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
-                endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
-                endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
-
-                if (endPosition.y < 0)
-                {
-                    endPosition.y = 0;
-                }
-
-                int[] endPosData;
-                Vector3 newEndPosition = correctedPositions(endPosition, touched, out endPosData, 2);
-
-                deleteSelector.transform.position = endPosition;
-                deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
-
-                if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
-                {
-                    originPointerPosition = endPosition;
-                    correctedOriginPointerPosition = newEndPosition;
-                    startPosData = endPosData;
-                    touched = true;
-                }
-                if (possible && touched)
-                {
-                    if (Input.GetMouseButton(0))
-                    {
-                        Vector3 difference = newEndPosition - correctedOriginPointerPosition;
-                        deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
-                        deleteSelector.transform.position = correctedOriginPointerPosition + difference / 2;
-
-                        /*
-                        int children = deleteSelector.transform.GetChild(0).transform.childCount;
-                        for (int i = 0; i < children; ++i)
-                        {
-                            rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
-                            rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
-                            rend.material.SetFloat("Vector1_D6E874BF", (deleteSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
-                        }
-                        */
-
-                    }
-                    else if (Input.GetMouseButtonUp(0))
-                    {
-                        paintSelected(newEndPosition);
-                        touched = false;
-                    }
-                }
-                else if (Input.GetMouseButtonUp(0))
-                {
-                    touched = false;
-                }
-            }
-            else
-            {
-                deleteSelector.SetActive(false);
-            }
-        }
-    }
-    public void touchPaintControl()
-    {
-        tileSelector.SetActive(false);
-        if ((Input.touchCount < touchCountEditorFix + 2 && Input.touchCount > touchCountEditorFix) && !moveGesture)
-        {
-            RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.GetTouch(touchCountEditorFix).position);
-            if (Physics.Raycast(ray, out hit, 100.0f))
-            {
-                if (string.CompareOrdinal(hit.transform.gameObject.name, groundPlane.name) != 0)
-                {
-                    Vector3 endPosition = hit.point - hit.normal / 2;
-
-                    endPosition.x = (float)System.Math.Round(endPosition.x, System.MidpointRounding.AwayFromZero);
-                    endPosition.y = (float)System.Math.Round(endPosition.y, System.MidpointRounding.AwayFromZero);
-                    endPosition.z = (float)System.Math.Round(endPosition.z, System.MidpointRounding.AwayFromZero);
-
-                    if (endPosition.y < 0)
-                    {
-                        endPosition.y = 0;
-                    }
-
-                    int[] endPosData;
-                    Vector3 newEndPosition = correctedPositions(endPosition, touched, out endPosData, 2);
-
-                    deleteSelector.transform.position = endPosition;
-                    deleteSelector.transform.GetChild(0).gameObject.transform.up = hit.normal;
-
-                    bool endedTouch = false;
-                    if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Began && !EventSystem.current.IsPointerOverGameObject(Input.touches[0].fingerId))
-                    {
-                        touched = true;
-                        originPointerPosition = endPosition;
-                        correctedOriginPointerPosition = newEndPosition;
-                        startPosData = endPosData;
-                    }
-                    else if (Input.GetTouch(touchCountEditorFix).phase == TouchPhase.Ended)
-                    {
-                        endedTouch = true;
-                    }
-
-                    if (possible && touched)
-                    {
-                        if (Input.touchCount == touchCountEditorFix + 1 && !endedTouch)
-                        {
-                            Vector3 difference = newEndPosition - correctedOriginPointerPosition;
-                            deleteSelector.transform.localScale = new Vector3(Mathf.Abs(difference.x) + 1, Mathf.Abs(difference.y) + 1, Mathf.Abs(difference.z) + 1);
-                            deleteSelector.transform.position = correctedOriginPointerPosition + difference / 2;
-
-                            /*
-                            int children = deleteSelector.transform.GetChild(0).transform.childCount;
-                            for (int i = 0; i < children; ++i)
-                            {
-                                rend = deleteSelector.transform.GetChild(0).transform.GetChild(i).GetComponent<Renderer>();
-                                rend.material.shader = Shader.Find("Shader Graphs/FieldSelect");
-                                rend.material.SetFloat("Vector1_D6E874BF", (deleteSelector.transform.GetChild(0).transform.localScale.y * 0.8f));
-                            }
-                            */
-
-                        }
-                        else if (endedTouch)
-                        {
-                            paintSelected(newEndPosition);
-                            touched = false;
-                        }
-                    }
-                    else if (endedTouch)
-                    {
-                        touched = false;
-                    }
-
-                }
-                else
-                {
-                    deleteSelector.SetActive(false);
-                }
-            }
-            else
-            {
-                deleteSelector.SetActive(false);
-            }
-        }
-        else
-        {
-            deleteSelector.SetActive(false);
-            touched = false;
-        }
-    }
-    private void paintSelected(Vector3 endPosition)
-    {
-        Vector2[] bounds = calculateBounds(endPosition);
+        Vector2[] bounds = CalculateBounds(endPosition);
 
         ArrayList paintedCubes = new ArrayList();
         ArrayList oldColors = new ArrayList();
@@ -933,7 +705,7 @@ public class SceneController : MonoBehaviour
         action.Add(UIController.selectedColor); //new Color
         action.Add(oldColors);
 
-        undoRedoScript.addAction(action);
+        undoRedoScript.AddAction(action);
 
         deleteSelector.transform.localScale = new Vector3(1, 1, 1);
         deleteSelector.transform.position = endPosition;

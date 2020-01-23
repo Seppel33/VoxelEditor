@@ -86,7 +86,7 @@ public class UIController : MonoBehaviour
             if (debugInfos.activeSelf)
             {
                 fps.text = (int)(1.0 / Time.smoothDeltaTime) + " FPS";
-                monitor.text = "DPs: " + Display.displays.Length + " Res: " + Screen.currentResolution + " TS: " + Input.touchSupported + " TC: " + Input.touchCount + " DPI: " + Screen.dpi + " SaveArea: " + Screen.safeArea;
+                monitor.text = "DPs: " + Display.displays.Length + " Res: " + Screen.currentResolution + " TS: " + Input.touchSupported + " TC: " + Input.touchCount + " DPI: " + Screen.dpi + " SaveArea: " + Screen.safeArea + " MM: " + sceneController.mouseMoved + " DebugMessage: " + SceneController.lastDebugMessage;
             }
             else
             {
@@ -102,18 +102,16 @@ public class UIController : MonoBehaviour
         {
             ColorWheelAnimate();
         }
-        if (SceneController.activeTouchControl)
+
+        if (Input.touchCount == 1)
         {
-            if(Input.touchCount == 1)
+            if (Input.GetTouch(0).phase == TouchPhase.Began)
             {
-                if (Input.GetTouch(0).phase == TouchPhase.Began)
-                {
-                    clickTime = Time.time;
-                }
-                else if (Input.GetTouch(0).phase == TouchPhase.Ended)
-                {
-                    clickTime = 0;
-                }
+                clickTime = Time.time;
+            }
+            else if (Input.GetTouch(0).phase == TouchPhase.Ended)
+            {
+                clickTime = 0;
             }
         }
         else
@@ -130,12 +128,9 @@ public class UIController : MonoBehaviour
     }
     private void OnApplicationQuit()
     {
-        if (SceneController.activeTouchControl)
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
         {
-            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-            {
-                CloseKeyboard();
-            }
+            CloseKeyboard();
         }
     }
     public void SetDebugMode(bool debugMode)
@@ -363,7 +358,7 @@ public class UIController : MonoBehaviour
         }
         else
         {
-            StartDeleteProcess(saveState);
+            //StartDeleteProcess(saveState);
         }
     }
     private void TryLoad(Button saveState)
@@ -409,13 +404,9 @@ public class UIController : MonoBehaviour
     }
     public void SaveUnderNew(InputField input)
     {
-
-        if (SceneController.activeTouchControl)
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
         {
-            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-            {
-                CloseKeyboard();
-            }
+            CloseKeyboard();
         }
         string dataName = input.text;
         string path = Application.persistentDataPath + "/models/" + dataName + ".vx";
@@ -458,7 +449,7 @@ public class UIController : MonoBehaviour
             SceneController.gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
             SceneController.timeTaken = modelData.timeTaken;
             SceneController.actionsQuantity = modelData.actions;
-            sceneController.updateScene();
+            sceneController.UpdateScene();
 
             Renderer rend;
             int count = 0;
@@ -626,13 +617,11 @@ public class UIController : MonoBehaviour
         inputField.Select();
         inputField.ActivateInputField();
 
-        if (SceneController.activeTouchControl)
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
         {
-            if(Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-            {
-                OpenKeyboard();
-            }
+            OpenKeyboard();
         }
+
     }
     public void CheckForLengh(InputField input)
     {
@@ -656,13 +645,11 @@ public class UIController : MonoBehaviour
     }
     public void NewScene()
     {
-        if (SceneController.activeTouchControl)
+        if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
         {
-            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-            {
-                CloseKeyboard();
-            }
+            CloseKeyboard();
         }
+
         Vector3Int dimensions = new Vector3Int();
         switch (sizeSelectPopUp.transform.Find("Dropdown").GetComponent<Dropdown>().value)
         {
@@ -695,7 +682,7 @@ public class UIController : MonoBehaviour
         SceneController.gridOfObjects = new GameObject[dimensions.x, dimensions.y, dimensions.z];
         SceneController.timeTaken = 0;
         SceneController.actionsQuantity = 0;
-        sceneController.updateScene();
+        sceneController.UpdateScene();
         sizeSelectPopUp.SetActive(false);
         activeMenu = false;
     }
@@ -721,23 +708,17 @@ public class UIController : MonoBehaviour
         if(sizeSelectPopUp.transform.Find("Dropdown").GetComponent<Dropdown>().value == 3)
         {
             sizeSelectPopUp.transform.Find("CustomInput").gameObject.SetActive(true);
-            if (SceneController.activeTouchControl)
+            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
             {
-                if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-                {
-                    OpenKeyboard();
-                }
+                OpenKeyboard();
             }
         }
         else
         {
             sizeSelectPopUp.transform.Find("CustomInput").gameObject.SetActive(false);
-            if (SceneController.activeTouchControl)
+            if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
             {
-                if (Application.platform == RuntimePlatform.WindowsEditor || Application.platform == RuntimePlatform.WindowsPlayer)
-                {
-                    CloseKeyboard();
-                }
+                CloseKeyboard();
             }
         }
     }
