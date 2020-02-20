@@ -63,21 +63,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\FlexibleColorPicker\ExampleScene\FCP_ExampleScript.cs" />
-    <Compile Include="Assets\FlexibleColorPicker\Scripts\FCP_SpriteMeshEditor.cs" />
-    <Compile Include="Assets\FlexibleColorPicker\Scripts\FlexibleColorPicker.cs" />
-    <Compile Include="Assets\Scripts\CameraController.cs" />
-    <Compile Include="Assets\Scripts\KeepOnLoad.cs" />
-    <Compile Include="Assets\Scripts\MeshHandler.cs" />
-    <Compile Include="Assets\Scripts\ModelData.cs" />
-    <Compile Include="Assets\Scripts\ObjExporter.cs" />
-    <Compile Include="Assets\Scripts\SaveSystem.cs" />
-    <Compile Include="Assets\Scripts\SceneController.cs" />
-    <Compile Include="Assets\Scripts\ScreenSaveArea.cs" />
-    <Compile Include="Assets\Scripts\Settings.cs" />
-    <Compile Include="Assets\Scripts\UIController.cs" />
-    <Compile Include="Assets\Scripts\UndoRedo.cs" />
-    <Compile Include="Assets\Scripts\VirtualKeyboard.cs" />
     <Compile Include="Assets\TouchScript\Examples\_misc\Scripts\Checker.cs" />
     <Compile Include="Assets\TouchScript\Examples\_misc\Scripts\ExamplesList.cs" />
     <Compile Include="Assets\TouchScript\Examples\_misc\Scripts\Highlight.cs" />
@@ -196,34 +181,60 @@
     <Compile Include="Assets\TouchScript\Scripts\Utils\PointerUtils.cs" />
     <Compile Include="Assets\TouchScript\Scripts\Utils\TimedSequence.cs" />
     <Compile Include="Assets\TouchScript\Scripts\Utils\TransformUtils.cs" />
+    <Compile Include="Assets\VoxelEditor\FlexibleColorPicker\ExampleScene\FCP_ExampleScript.cs" />
+    <Compile Include="Assets\VoxelEditor\FlexibleColorPicker\Scripts\FCP_SpriteMeshEditor.cs" />
+    <Compile Include="Assets\VoxelEditor\FlexibleColorPicker\Scripts\FlexibleColorPicker.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Android\FBCallbackHelper.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Android\FBDirectoryReceiveCallbackAndroid.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Android\FBPermissionCallbackAndroid.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\FileBrowser.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\FileBrowserHelpers.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\FileBrowserItem.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\FileBrowserMovement.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\FileBrowserQuickLink.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\SimpleRecycledListView\IListViewAdapter.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\SimpleRecycledListView\ListItem.cs" />
+    <Compile Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\Scripts\SimpleRecycledListView\RecycledListView.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\CameraController.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\MeshHandler.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\ModelData.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\ObjExporter.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\SaveSystem.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\SceneController.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\ScreenSaveArea.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\Settings.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\UIController.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\UndoRedo.cs" />
+    <Compile Include="Assets\VoxelEditor\Scripts\VirtualKeyboard.cs" />
     <None Include="Assets\TouchScript\Shaders\DebugDepthTest.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface-Mobile.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMPro_Properties.cginc" />
-    <None Include="Assets\FlexibleColorPicker\Materials\FCP_Gradient.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface-Mobile.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
+    <None Include="Assets\VoxelEditor\Plugins\SimpleFileBrowser\README.txt" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMPro_Properties.cginc" />
+    <None Include="Assets\VoxelEditor\FlexibleColorPicker\Materials\FCP_Gradient.shader" />
     <None Include="Assets\TouchScript\license.txt" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
     <None Include="Assets\TouchScript\Shaders\Cursor.shader" />
     <None Include="Assets\TouchScript\Shaders\DebugMultiplyDepthTest.shader" />
     <None Include="Assets\TouchScript\Shaders\DebugNoDepthTest.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
-    <None Include="Assets\Texture\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile Masking.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_Bitmap-Mobile.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF Overlay.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMPro_Surface.cginc" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile Overlay.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile Masking.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_Bitmap-Mobile.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF Overlay.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMPro_Surface.cginc" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile Overlay.shader" />
     <None Include="Assets\TouchScript\Shaders\DebugMultiplyNoDepthTest.shader" />
     <None Include="Assets\TouchScript\Examples\_misc\Shaders\UnlitColor.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_Bitmap.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMPro.cginc" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_Bitmap.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMPro.cginc" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF.shader" />
     <None Include="Assets\TouchScript\Examples\_misc\Shaders\BorderDiffuse.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile.shader" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_Sprite.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Mobile.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_Sprite.shader" />
     <None Include="Assets\readme.txt" />
-    <None Include="Assets\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface.shader" />
+    <None Include="Assets\VoxelEditor\Texture\TextMesh Pro\Resources\Shaders\TMP_SDF-Surface.shader" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/Users/Sebastian Schmidt/Documents/GitKraken/VoxelEditor/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
@@ -818,12 +829,6 @@
     <Reference Include="Boo.Lang">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.2.12f1/Editor/Data/MonoBleedingEdge/lib/mono/unityscript/Boo.Lang.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="Assembly-CSharp-firstpass.csproj">
-      <Project>{DE249E27-B0D5-0BC0-639F-55E8CFFE6DA7}</Project>
-      <Name>Assembly-CSharp-firstpass</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
