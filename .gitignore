@@ -4,3 +4,9 @@ Library/
 Temp/
 
 .vs/
+
+Szenariovisualisierung/obj/
+
+*.csproj
+
+*.sln

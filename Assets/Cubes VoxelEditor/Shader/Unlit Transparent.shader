@@ -29,7 +29,7 @@ Shader "Unlit/Transparent Simple" {
 
 					struct v2f {
 						float4 vertex : SV_POSITION;
-						half2 texcoord : TEXCOORD0;
+						half2 texcoord : texcoord;
 						UNITY_FOG_COORDS(1)
 					};
 

@@ -65,13 +65,13 @@ public static class SaveSystem
         System.IO.File.Copy(path, Application.persistentDataPath + "/models/" + name +".vx", true);
         return name;
     }
-    public static void ExportModelToObj(string path, GameObject voxelModel, float scale, out bool executed)
+    public static void ExportModelToObj(string path, GameObject voxelModel, float scale, GameObject checker, out bool executed)
     {
         MeshHandler meshHandler = new MeshHandler();
         if (voxelModel.GetComponentsInChildren<MeshFilter>() != null)
         {
             GameObject fullMeshObject = meshHandler.CreateTempModel(voxelModel);
-            if (meshHandler.PrepareMesh(ref fullMeshObject))
+            if (meshHandler.PrepareMesh(ref fullMeshObject, checker))
             {
                 ObjExporter.MeshToFile(fullMeshObject, path, scale);
                 executed = true;
@@ -80,6 +80,7 @@ public static class SaveSystem
             {
                 executed = false;
             }
+            GameObject.Destroy(fullMeshObject);
         }
         else
         {

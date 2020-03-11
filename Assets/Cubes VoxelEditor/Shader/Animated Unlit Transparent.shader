@@ -32,7 +32,7 @@ Shader "Unlit/Transparent Animated" {
 					struct v2f {
 						float2 uv : TEXCOORD0;
 						float4 vertex : SV_POSITION;
-						half2 texcoord : TEXCOORD0;
+						half2 texcoord : TEXCOORD1;
 						UNITY_FOG_COORDS(1)
 					};
 

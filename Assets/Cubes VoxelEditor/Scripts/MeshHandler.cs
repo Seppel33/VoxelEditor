@@ -6,8 +6,11 @@ using System.Linq;
 public class MeshHandler
 {
     private GameObject model;
-    public bool PrepareMesh(ref GameObject fullMesh)
+    private int iteration = 0;
+    public GameObject checker;
+    public bool PrepareMesh(ref GameObject fullMesh, GameObject checker)
     {
+        this.checker = checker;
         OptimizeMesh();
         AssignStandardMaterials();
         bool b = CombineMeshes();
@@ -89,6 +92,11 @@ public class MeshHandler
             //check if empty neighbor is enclosed and could be counted as filled
             if (neighbors < 6)
             {
+                //GameObject c = UnityEngine.GameObject.Instantiate(checker);
+                //c.GetComponent<AlgorithmVisualise>().SetData(gridOfObjectChecks, neighbor, gridOfObjectOverwrittenChecks, objPos, neighbors, iteration);
+
+                
+                //iteration++;
                 /*
                 bool[,,] tempGridOfObjectChecks = gridOfObjectChecks;
                 List<Vector3Int> checkedBlocks = new List<Vector3Int>();
@@ -100,7 +108,7 @@ public class MeshHandler
                         switch (t)
                         {
                             case 0:
-                                if (objPos.y < SceneController.dimensions.y - 1)
+                                if (objPos.y < SceneController.dimensions.y)
                                     gridOfObjectChecks = CalculateNewList(tempGridOfObjectChecks, gridOfObjectOverwrittenChecks, new Vector3Int(objPos.x + SceneController.dimensions.x / 2, objPos.y + 1, objPos.z + SceneController.dimensions.y / 2), checkedBlocks, out newNeighbor);
                                 break;
                             case 1:

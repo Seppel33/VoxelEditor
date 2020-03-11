@@ -58,14 +58,12 @@ public class ObjExporter
             sb.Append("Kd ").Append(color).Append("\n");
             sb.Append("illum 1").Append("\n").Append("\n");
         }
-        
 
         return sb.ToString();
     }
 
     public static void MeshToFile(GameObject objectToExport, string filename, float scale)
     {
-        
         using (StreamWriter sw = new StreamWriter(filename))
         {
             sw.Write(MeshToString(objectToExport.GetComponent<MeshFilter>(), objectToExport.GetComponent<Renderer>(), filename, scale));

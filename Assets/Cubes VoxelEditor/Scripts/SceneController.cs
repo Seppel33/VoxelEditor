@@ -61,7 +61,6 @@ public class SceneController : MonoBehaviour
         if (SceneManager.sceneCountInBuildSettings > 1)
         {
             standalone = false;
-            
         }
         UIController.SetupUIForVersions(standalone);
         string operatingSystem = SystemInfo.operatingSystem;
@@ -89,6 +88,20 @@ public class SceneController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        /*
+        if (Input.GetKeyDown(KeyCode.N))
+        {
+            AlgorithmVisualise.sideCheck = 0;
+            AlgorithmVisualise.lastSide = -1;
+            AlgorithmVisualise.globalIteration += 1;
+            Debug.Log("KeyPressed now gI = " + AlgorithmVisualise.globalIteration);
+        }
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            AlgorithmVisualise.sideCheck += 1;
+            Debug.Log("KeyPressed now sC = " + AlgorithmVisualise.sideCheck);
+        }
+        */
         if (vrMode)
         {
 
@@ -163,7 +176,6 @@ public class SceneController : MonoBehaviour
                     }
                 }
             }
-
             else if (UIController.GetActiveColorSelector())
             {
                 timeTaken += Time.deltaTime;
@@ -184,7 +196,6 @@ public class SceneController : MonoBehaviour
                 {
                     if(gridOfObjects[x, y, z] != null)
                     {
-                        Debug.Log("Object Detected");
                         if(first)
                         {
                             xBounds.x = x;
@@ -223,12 +234,20 @@ public class SceneController : MonoBehaviour
                                 zBounds.y = z;
                             }
                         }
-                        Debug.Log("New Bounds: " + xBounds + " " + yBounds + " " + zBounds);
                     }
                 }
             }
         }
-        return new Vector3((xBounds.y+1-xBounds.x), (yBounds.y+1 - yBounds.x), (zBounds.y+1 - zBounds.x));
+        Vector3 scale;
+        if(xBounds.x+xBounds.y == 0 && yBounds.x + yBounds.y == 0 && zBounds.x + zBounds.y == 0)
+        {
+            scale = new Vector3(0, 0, 0);
+        }
+        else
+        {
+            scale = new Vector3((xBounds.y + 1 - xBounds.x), (yBounds.y + 1 - yBounds.x), (zBounds.y + 1 - zBounds.x));
+        }
+        return scale;
     }
     public void UpdateScene()
     {

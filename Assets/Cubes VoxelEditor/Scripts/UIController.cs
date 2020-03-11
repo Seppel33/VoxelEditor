@@ -1,10 +1,12 @@
 ﻿using System.Collections;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using SimpleFileBrowser;
 using UnityEngine.SceneManagement;
+using EmailSender;
+using System.Text.RegularExpressions;
 
 public class UIController : MonoBehaviour
 {
@@ -26,6 +28,7 @@ public class UIController : MonoBehaviour
     public float longPressBias = 0.5f;
 
     public int selectedState = 0;
+    public GameObject checker;
 
     public Button paintButton;
     public Button buildButton;
@@ -48,6 +51,8 @@ public class UIController : MonoBehaviour
     public GameObject sizeSelectPopUp;
     public GameObject exportErrorPanel;
     public GameObject scaleSelectorPanel;
+    public GameObject unsavedBlockade;
+    public GameObject sendMailPanel;
 
     public Image pickedColor;
     public Color selectedColor;
@@ -65,9 +70,11 @@ public class UIController : MonoBehaviour
     private WaitForEndOfFrame frameEnd = new WaitForEndOfFrame();
     private string modelName;
     private Vector3 modelSize;
+    private bool[] mailChecks = new bool[3];
     // Start is called before the first frame update
     void Start()
     {
+        mailChecks[1] = true;
         vk = new VirtualKeyboard();
         selectedColor = pickedColor.GetComponent<Image>().color;
 
@@ -607,6 +614,7 @@ public class UIController : MonoBehaviour
             
             Button save = Instantiate(savestate) as Button;
             save.transform.SetParent(saveLoadMenu.transform.GetChild(0).transform.GetChild(0).transform.GetChild(0).transform, false);
+            save.GetComponent<Button>().onClick.RemoveAllListeners();
             save.GetComponent<Button>().onClick.AddListener(delegate { SaveLoad(save); });
             save.transform.Find("Text").GetComponent<Text>().text = Path.GetFileNameWithoutExtension(file);
             ModelData m = SaveSystem.LoadEditableModel(Path.GetFileNameWithoutExtension(file));
@@ -705,6 +713,23 @@ public class UIController : MonoBehaviour
         sizeSelectPopUp.SetActive(false);
         activeMenu = false;
     }
+    public void FitDimension(int field)
+    {
+        string s = sizeSelectPopUp.transform.Find("CustomInput").transform.GetChild(field).GetComponent<InputField>().text.Replace("-", "");
+        if (!s.Equals(""))
+        {
+            int number = int.Parse(s);
+            if (number == 0)
+            {
+                number++;
+            }
+            else if (number % 2 == 0)
+            {
+                number++;
+            }
+            sizeSelectPopUp.transform.Find("CustomInput").transform.GetChild(field).GetComponent<InputField>().text = "" + number;
+        }
+    }
     public void TryNewScene()
     {
         CloseSecondMenu();
@@ -794,21 +819,34 @@ public class UIController : MonoBehaviour
     }
     private void ShowExportWindow()
     {
-        float scale = float.Parse(scaleSelectorPanel.transform.Find("ScaleInput").transform.Find("Text").GetComponent<Text>().text.Replace(".", ","));
-        if (scale == 0)
-        {
-            scale = 0.1f;
-        }
-        scaleSelectorPanel.SetActive(false);
-
         CloseSecondMenu();
         string initialPath = "";
         FileBrowser.SetFilters(false, new FileBrowser.Filter("", ".vx"), new FileBrowser.Filter("", ".obj"));
         FileBrowser.SetDefaultFilter(".vx");
-        FileBrowser.ShowSaveDialog((path) => ExportModel(path, scale), null, false, initialPath, "Export", "Create");
+        FileBrowser.ShowSaveDialog((path) => ExportModel(path), null, false, initialPath, "Export", "Create");
     }
-    private void ExportModel(string path, float scale)
+    private void ExportModel(string path)
     {
+        string input = scaleSelectorPanel.transform.Find("ScaleInput").GetComponent<InputField>().text.Replace(".", ",");
+        if (input.Length != 0)
+        {
+            if (input.Substring(input.Length - 1).Equals(","))
+            {
+                input = input.Substring(0, input.Length - 1);
+            }
+        }
+        else
+        {
+            input = "0,3";
+        }
+
+        float scale = float.Parse(input);
+        if (scale == 0)
+        {
+            scale = 0.3f;
+        }
+        scaleSelectorPanel.SetActive(false);
+
         string extension = Path.GetExtension(path);
         if (extension.Equals(".vx"))
         {
@@ -817,7 +855,7 @@ public class UIController : MonoBehaviour
         else
         {
             bool executed;
-            SaveSystem.ExportModelToObj(path, voxelModel, scale, out executed);
+            SaveSystem.ExportModelToObj(path, voxelModel, scale, checker, out executed);
             if (!executed)
             {
                 OpenExportError();
@@ -862,13 +900,6 @@ public class UIController : MonoBehaviour
     }
     private void BackToSceneWithModel()
     {
-        float scale = float.Parse(scaleSelectorPanel.transform.Find("ScaleInput").transform.Find("Text").GetComponent<Text>().text.Replace(".", ","));
-        if (scale == 0)
-        {
-            scale = 0.1f;
-        }
-        scaleSelectorPanel.SetActive(false);
-
         if (!Directory.Exists(Application.persistentDataPath + "/internalModels/models"))
         {
             //if it doesn't, create it
@@ -880,8 +911,8 @@ public class UIController : MonoBehaviour
             Directory.CreateDirectory(Application.persistentDataPath + "/internalModels/pictures");
         }
 
-        ExportModel(Application.persistentDataPath + "/internalModels/models/" + modelName +".obj", scale);
-
+        ExportModel(Application.persistentDataPath + "/internalModels/models/" + modelName +".obj");
+        
         //hide ui
         this.GetComponent<Canvas>().enabled = false;
 
@@ -890,6 +921,7 @@ public class UIController : MonoBehaviour
 
         //switch scene
         SceneManager.LoadScene("Windridge City Demo Scene", LoadSceneMode.Single);
+        
     }
     private IEnumerator TakeScreenshot()
     {
@@ -900,27 +932,53 @@ public class UIController : MonoBehaviour
         byte[] bytes = image.EncodeToPNG();
         System.IO.File.WriteAllBytes(Application.persistentDataPath+ "/internalModels/pictures/" + modelName + ".png", bytes);
     }
-    public void ShowScaleDialog(bool normalExport)
+    public void ShowScaleDialog(string from, string to, int dataType)
     {
-        if (normalExport)
+        modelSize = sceneController.CalculateSize();
+        if(modelSize.x == 0 && modelSize.y == 0 && modelSize.z == 0)
         {
+            ToggleMenu();
+            return;
+        }
+
+        scaleSelectorPanel.transform.Find("OkButton").GetComponent<Button>().onClick.RemoveAllListeners();
+        scaleSelectorPanel.transform.Find("OkButton").GetComponent<Button>().onClick.AddListener(delegate { ExportForMail(from, to, dataType); });
+        scaleSelectorPanel.SetActive(true);
+
+        scaleSelectorPanel.transform.Find("LenghtText").GetComponent<Text>().text = "L = " + modelSize.x * 0.3f;
+        scaleSelectorPanel.transform.Find("HeightText").GetComponent<Text>().text = "H = " + modelSize.y * 0.3f;
+        scaleSelectorPanel.transform.Find("WidthText").GetComponent<Text>().text = "W = " + modelSize.z * 0.3f;
+    }
+    public void ShowScaleDialog(bool stayInScene)
+    {
+        modelSize = sceneController.CalculateSize();
+        if (modelSize.x == 0 && modelSize.y == 0 && modelSize.z == 0)
+        {
+            ToggleMenu();
+            return;
+        }
+
+        if (stayInScene)
+        {
+            scaleSelectorPanel.transform.Find("OkButton").GetComponent<Button>().onClick.RemoveAllListeners();
             scaleSelectorPanel.transform.Find("OkButton").GetComponent<Button>().onClick.AddListener(delegate { ShowExportWindow(); });
         }
         else
         {
+            scaleSelectorPanel.transform.Find("OkButton").GetComponent<Button>().onClick.RemoveAllListeners();
             scaleSelectorPanel.transform.Find("OkButton").GetComponent<Button>().onClick.AddListener(delegate { BackToSceneWithModel(); });
         }
         scaleSelectorPanel.SetActive(true);
 
-        modelSize = sceneController.CalculateSize();
-
-        scaleSelectorPanel.transform.Find("LenghtText").GetComponent<Text>().text = "L = " + modelSize.x * 0.1f;
-        scaleSelectorPanel.transform.Find("HeightText").GetComponent<Text>().text = "H = " + modelSize.y * 0.1f;
-        scaleSelectorPanel.transform.Find("WidthText").GetComponent<Text>().text = "W = " + modelSize.z * 0.1f;
+        scaleSelectorPanel.transform.Find("LenghtText").GetComponent<Text>().text = "L = " + modelSize.x * 0.3f;
+        scaleSelectorPanel.transform.Find("HeightText").GetComponent<Text>().text = "H = " + modelSize.y * 0.3f;
+        scaleSelectorPanel.transform.Find("WidthText").GetComponent<Text>().text = "W = " + modelSize.z * 0.3f;
     }
     public void UpdateScaleTexts()
     {
-        string input = scaleSelectorPanel.transform.Find("ScaleInput").GetComponent<InputField>().text.Replace(".", ",");
+        string input = scaleSelectorPanel.transform.Find("ScaleInput").GetComponent<InputField>().text.Replace("-", "");
+        scaleSelectorPanel.transform.Find("ScaleInput").GetComponent<InputField>().text = input;
+        input = input.Replace(".", ",");
         if(input.Length != 0)
         {
             if (input.Substring(input.Length - 1).Equals(","))
@@ -930,16 +988,253 @@ public class UIController : MonoBehaviour
         }
         else
         {
-            input = "0,1";
+            input = "0,3";
         }
         
         float scale = float.Parse(input);
         if (scale == 0)
         {
-            scale = 0.1f;
+            scale = 0.3f;
         }
         scaleSelectorPanel.transform.Find("LenghtText").GetComponent<Text>().text = "L = " + modelSize.x * scale + "m";
         scaleSelectorPanel.transform.Find("HeightText").GetComponent<Text>().text = "H = " + modelSize.y * scale + "m";
         scaleSelectorPanel.transform.Find("WidthText").GetComponent<Text>().text = "W = " + modelSize.z * scale + "m";
+    }
+    public void SendMailMessage(string from, string to, int mediaType)
+    {
+        MessageAttachment messageAttachment;
+        MessageAttachmentList messageAttachments = new MessageAttachmentList();
+        string bodyText;
+        if (mediaType == 0)
+        {
+            messageAttachment = new MessageAttachment("text/plain", Application.persistentDataPath + "/models/" + modelName + ".vx");
+            messageAttachments.Add(messageAttachment);
+
+            
+            bodyText = "You have gotten a Save-File from a Cubes-User.<br>" +
+                "To work with the attached file please follow these steps:<br>" +
+                "<ol>" +
+                "<li>Download the file onto your device." +
+                "<li>&#8226; Open 'Cubes' on your device (<a href='https://play.google.com/store/apps?hl=de'>Android</a> / <a href='https://google.com'>Windows</a>).<br>" +
+                "or<br>" +
+                "&#8226; Open '3D Engineer' on your device (<a href='https://play.google.com/store/apps?hl=de'>Android</a> / <a href='https://google.com'>Windows</a>)." +
+                "<li>Import the downloaded file into Cubes.<br>" +
+                "<li>Done! Now you can work with the model.</ol><br>" +
+                "<br>" +
+                "With best regards<br>" +
+                "Your Cubes-Team<br>" +
+                "<br>" +
+                "<small>If you do not want to see any e-mails from Cubes again, please contact us and/or mark this e-mail as spam.</small>";
+                
+        }
+        else if (mediaType == 1)
+        {
+            messageAttachment = new MessageAttachment("text/plain", Application.persistentDataPath + "/temp/" + modelName + ".obj");
+            messageAttachments.Add(messageAttachment);
+            messageAttachment = new MessageAttachment("text/plain", Application.persistentDataPath + "/temp/" + modelName + ".mtl");
+            messageAttachments.Add(messageAttachment);
+
+            bodyText = "You have gotten a 3D-Model from a Cubes-User.<br>" +
+              "You can use it in any program that is able to work with .obj files. To use the attached files in '3D-Engineer' please follow these steps:<br>" +
+              "<ol>" +
+              "<li>Download both files onto your device into the same folder." +
+              "<li>Open '3D Engineer' on your device (<a href='https://play.google.com/store/apps?hl=de'>Android</a> / <a href='https://google.com'>Windows</a>)." +
+              "<li>Import the downloaded 3D-Model into '3D Engineer'.<br>" +
+              "<li>Done! Now you can work with the model.</ol><br>" +
+              "<br>" +
+              "With best regards<br>" +
+              "Your Cubes-Team<br>" +
+              "<br>" +
+              "<p style='color:lightgrey;'><small>If you do not want to see any e-mails from Cubes again, please contact us and/or mark this e-mail as spam.</small></p>";
+        }
+        else
+        {
+            messageAttachment = new MessageAttachment("text/plain", Application.persistentDataPath + "/temp/" + modelName + ".obj");
+            messageAttachments.Add(messageAttachment);
+            messageAttachment = new MessageAttachment("text/plain", Application.persistentDataPath + "/temp/" + modelName + ".mtl");
+            messageAttachments.Add(messageAttachment);
+            messageAttachment = new MessageAttachment("text/plain", Application.persistentDataPath + "/models/" + modelName + ".vx");
+            messageAttachments.Add(messageAttachment);
+
+            bodyText = "You have gotten a 3D-Model and the corresponding Save-File from a Cubes-User.<br>" +
+                "To work with the attached Save-File please follow these steps:<br>" +
+                "<ol>" +
+                "<li>Download the file (.vx) onto your device." +
+                "<li>&#8226; Open 'Cubes' on your device (<a href='https://play.google.com/store/apps?hl=de'>Android</a> / <a href='https://google.com'>Windows</a>).<br>" +
+                "or<br>" +
+                "&#8226; Open '3D Engineer' on your device (<a href='https://play.google.com/store/apps?hl=de'>Android</a> / <a href='https://google.com'>Windows</a>)." +
+                "<li>Import the downloaded file into Cubes.<br>" +
+                "<li>Done! Now you can work with the model.</ol><br>" +
+                "You can use the 3D-Model in any program that is able to work with .obj files. To use the attached Model in '3D-Engineer' please follow these steps:<br>" +
+                "<ol>" +
+                "<li>Download the files (.obj + .mtl) onto your device into the same folder." +
+                "<li>Open '3D Engineer' on your device (<a href='https://play.google.com/store/apps?hl=de'>Android</a> / <a href='https://google.com'>Windows</a>)." +
+                "<li>Import the downloaded 3D-Model into '3D Engineer'.<br>" +
+                "<li>Done! Now you can work with the model.</ol><br>" +
+                "<br>" +
+                "With best regards<br>" +
+                "Your Cubes-Team<br>" +
+                "<br>" +
+                "<p style='color:lightgrey;'><small>If you do not want to see any e-mails from Cubes again, please contact us and/or mark this e-mail as spam.</small></p>";
+        }
+
+        SmtpSender smtpSender = new SmtpSender("smtp.gmail.com");
+        smtpSender.UserName = "fiiem.cubes@gmail.com";
+        smtpSender.Password = "tradpgkemlnzxafh";
+        smtpSender.Send("fiiem.cubes@gmail.com", to, "File from " + from + " out of 'Cubes'", bodyText, messageAttachments);
+
+        /*
+        if(mediaType != 0)
+        {
+            if(File.Exists(Application.persistentDataPath + "/temp/" + modelName + ".obj"))
+            {
+                File.Delete(Application.persistentDataPath + "/temp/" + modelName + ".obj");
+            }
+            if (File.Exists(Application.persistentDataPath + "/temp/" + modelName + ".mtl"))
+            {
+                File.Delete(Application.persistentDataPath + "/temp/" + modelName + ".mtl");
+            }
+        }*/
+    }
+    public void TrySendMail()
+    {
+        if (undoRedo.unsavedChanges)
+        {
+            unsavedBlockade.SetActive(true);
+            DisplaySaveFiles(1);
+        }
+        else
+        {
+            sendMailPanel.SetActive(true);
+        }
+    }
+    public void CloseUI(Button button)
+    {
+        button.transform.parent.gameObject.SetActive(false);
+    }
+    public void MailToggleCheck(GameObject parent)
+    {
+        Toggle[] toggles = parent.GetComponentsInChildren<Toggle>();
+        Color color;
+        if(!toggles[0].isOn && !toggles[1].isOn)
+        {
+            color = new Color(1, 0.5f, 0.5f, 1);
+            mailChecks[1] = false;
+        }
+        else
+        {
+            color = Color.white;
+            mailChecks[1] = true;
+        }
+        parent.transform.GetChild(0).GetComponentInChildren<Image>().color = color;
+        parent.transform.GetChild(1).GetComponentInChildren<Image>().color = color;
+
+        bool interactable;
+        if (mailChecks[0] && mailChecks[1] && mailChecks[2])
+        {
+            interactable = true;
+        }
+        else
+        {
+            interactable = false;
+        }
+        parent.transform.parent.transform.Find("SendButton").gameObject.GetComponent<Button>().interactable = interactable;
+
+    }
+    public void MailContentCheck(GameObject input)
+    {
+        string inputText = input.GetComponent<InputField>().text;
+        string pattern = @"([a-zA-Z0-9.]{1,20})[@]([a-zA-Z0-9]{2,10})[.]([a-zA-Z0-9]{2,10})([.]([a-zA-Z0-9]{2,10})){0,1}";
+
+        bool verifiedMail = false;
+        foreach (Match m in Regex.Matches(inputText, pattern))
+        {
+            verifiedMail = true;
+        }
+        Color color;
+        if (!verifiedMail)
+        {
+            color = new Color(1,0.5f,0.5f,1);
+            mailChecks[0] = false;
+        }
+        else
+        {
+            color = Color.white;
+            mailChecks[0] = true;
+        }
+        input.GetComponent<Image>().color = color;
+
+        bool interactable;
+        if(mailChecks[0] && mailChecks[1] && mailChecks[2])
+        {
+            interactable = true;
+        }
+        else
+        {
+            interactable = false;
+        }
+        input.transform.parent.transform.parent.transform.Find("SendButton").gameObject.GetComponent<Button>().interactable = interactable;
+    }
+    public void MailNameCheck(GameObject input)
+    {
+        Color color;
+        if(input.GetComponent<InputField>().text != null && !input.GetComponent<InputField>().text.Equals(""))
+        {
+            color = Color.white;
+            mailChecks[2] = true;
+        }
+        else
+        {
+            color = new Color(1, 0.5f, 0.5f, 1);
+            mailChecks[2] = false;
+        }
+        input.GetComponent<Image>().color = color;
+
+        bool interactable;
+        if (mailChecks[0] && mailChecks[1] && mailChecks[2])
+        {
+            interactable = true;
+        }
+        else
+        {
+            interactable = false;
+        }
+        input.transform.parent.transform.parent.transform.Find("SendButton").gameObject.GetComponent<Button>().interactable = interactable;
+    }
+    public void PrepareMailData(GameObject parent)
+    {
+        string from = parent.transform.Find("From").transform.Find("InputField").GetComponent<InputField>().text;
+        string to = parent.transform.Find("To").transform.Find("InputField").GetComponent<InputField>().text;
+        int dataType;
+        if(parent.transform.Find("TypeToggle").transform.GetChild(0).GetComponent<Toggle>().isOn && parent.transform.Find("TypeToggle").transform.GetChild(1).GetComponent<Toggle>().isOn)
+        {
+            dataType = 2;
+        }else if (parent.transform.Find("TypeToggle").transform.GetChild(0).GetComponent<Toggle>().isOn)
+        {
+            dataType = 1;
+        }
+        else
+        {
+            dataType = 0;
+        }
+        if (dataType != 0)
+        {
+            ShowScaleDialog(from, to, dataType);
+        }
+        else
+        {
+            SendMailMessage(from, to, dataType);
+        }
+        sendMailPanel.SetActive(false);
+    }
+    public void ExportForMail(string from, string to, int dataType)
+    {
+        scaleSelectorPanel.SetActive(false);
+        if (!Directory.Exists(Application.persistentDataPath + "/temp/"))
+        {
+            Directory.CreateDirectory(Application.persistentDataPath + "/temp/");
+        }
+        ExportModel(Application.persistentDataPath + "/temp/" + modelName + ".obj");
+        SendMailMessage(from, to, dataType);
     }
 }
